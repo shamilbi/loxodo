@@ -19,6 +19,7 @@
 
 import os
 import wx
+import wx.adv
 
 from .wxlocale import _
 from ...vault import Vault
@@ -152,7 +153,7 @@ class VaultFrame(wx.Frame):
         self.list.Bind(wx.EVT_RIGHT_UP, self._on_list_contextmenu)
         self.list.Bind(wx.EVT_CHAR, self._on_list_box_char)
 
-        self.statusbar = self.CreateStatusBar(1, wx.ST_SIZEGRIP)
+        self.statusbar = self.CreateStatusBar(1, wx.STB_SIZEGRIP)
 
         # Set up menus
         filemenu = wx.Menu()
@@ -170,19 +171,19 @@ class VaultFrame(wx.Frame):
         filemenu.Append(wx.ID_EXIT, _("E&xit"))
         wx.EVT_MENU(self, wx.ID_EXIT, self._on_exit)
         self._recordmenu = wx.Menu()
-        self._recordmenu.Append(wx.ID_ADD, _("&Add\tCtrl+A"))
+        self._recordmenu.Append(wx.ID_ADD, _("&Add\tCtrl+Shift+A"))
         wx.EVT_MENU(self, wx.ID_ADD, self._on_add)
-        self._recordmenu.Append(wx.ID_DELETE, _("&Delete\tCtrl+Back"))
+        self._recordmenu.Append(wx.ID_DELETE, _("&Delete\tCtrl+Del"))
         wx.EVT_MENU(self, wx.ID_DELETE, self._on_delete)
         self._recordmenu.AppendSeparator()
         self._recordmenu.Append(wx.ID_PROPERTIES, _("&Edit\tCtrl+E"))
         wx.EVT_MENU(self, wx.ID_PROPERTIES, self._on_edit)
         self._recordmenu.AppendSeparator()
         temp_id = wx.NewId()
-        self._recordmenu.Append(temp_id, _("Copy &Username\tCtrl+U"))
+        self._recordmenu.Append(temp_id, _("Copy &Username\tCtrl+Shift+C"))
         wx.EVT_MENU(self, temp_id, self._on_copy_username)
         temp_id = wx.NewId()
-        self._recordmenu.Append(temp_id, _("Copy &Password\tCtrl+P"))
+        self._recordmenu.Append(temp_id, _("Copy &Password\tCtrl+C"))
         wx.EVT_MENU(self, temp_id, self._on_copy_password)
         temp_id = wx.NewId()
         self._recordmenu.Append(temp_id, _("Open UR&L\tCtrl+L"))
@@ -375,7 +376,7 @@ if not, write to the Free Software Foundation, Inc.,
                       "Nick Verbeck"
                       )
 
-        about = wx.AboutDialogInfo()
+        about = wx.adv.AboutDialogInfo()
         about.SetIcon(wx.Icon(os.path.join(get_resourcedir(), "loxodo-icon.png"), wx.BITMAP_TYPE_PNG, 128, 128))
         about.SetName("Loxodo")
         about.SetVersion("0.0-git")
@@ -383,7 +384,7 @@ if not, write to the Free Software Foundation, Inc.,
         about.SetWebSite("http://www.christoph-sommer.de/loxodo")
         about.SetLicense(gpl_v2)
         about.SetDevelopers(developers)
-        wx.AboutBox(about)
+        wx.adv.AboutBox(about)
 
     def _on_settings(self, dummy):
         """
