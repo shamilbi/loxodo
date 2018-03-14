@@ -146,7 +146,8 @@ class VaultFrame(wx.Frame):
 
         self.panel = wx.Panel(self, -1)
 
-        self._searchbox = wx.SearchCtrl(self.panel, size=(200, -1))
+        self._searchbox = wx.SearchCtrl(self.panel, size=(200, 30))
+        # size(200, -1) --> too small height on Linux-x86_64
         self._searchbox.ShowCancelButton(True)
         self.list = self.VaultListCtrl(self.panel, -1, size=(640, 240), style=wx.LC_REPORT|wx.SUNKEN_BORDER|wx.LC_VIRTUAL|wx.LC_EDIT_LABELS)
         self.list.Bind(wx.EVT_COMMAND_RIGHT_CLICK, self._on_list_contextmenu)
@@ -234,12 +235,14 @@ class VaultFrame(wx.Frame):
         """
         Typing in the list box doesn't do anything, redirect it to the search box
         """
-        if not (0 < key_event.GetKeyCode() < 256):
+        keycode = key_event.GetKeyCode()
+        if not (0 < keycode < 256):
             # Arrow keys, page up, etc -- let event propagate to default handler
             key_event.Skip()
             return
-        if key_event.HasModifiers():
+        if key_event.HasModifiers() or keycode == wx.WXK_TAB:
             # ctrl (eg Ctrl-U to copy username, Ctrl-P to copy password)
+            # TAB - switch to SearchBox
             key_event.Skip()
             return
         self._searchbox.SetFocus()
