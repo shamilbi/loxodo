@@ -181,10 +181,10 @@ class VaultFrame(wx.Frame):
         wx.EVT_MENU(self, wx.ID_PROPERTIES, self._on_edit)
         self._recordmenu.AppendSeparator()
         temp_id = wx.NewId()
-        self._recordmenu.Append(temp_id, _("Copy &Username\tCtrl+Shift+C"))
+        self._recordmenu.Append(temp_id, _("Copy &Username\tCtrl+U"))
         wx.EVT_MENU(self, temp_id, self._on_copy_username)
         temp_id = wx.NewId()
-        self._recordmenu.Append(temp_id, _("Copy &Password\tCtrl+C"))
+        self._recordmenu.Append(temp_id, _("Copy &Password\tCtrl+P"))
         wx.EVT_MENU(self, temp_id, self._on_copy_password)
         temp_id = wx.NewId()
         self._recordmenu.Append(temp_id, _("Open UR&L\tCtrl+L"))
@@ -645,19 +645,23 @@ if not, write to the Free Software Foundation, Inc.,
         """
         Event handler: Fires when user presses a key in self._searchbox
         """
+        keycode = evt.GetKeyCode()
         # If "Enter" was pressed, ignore key and copy password of first match
-        if evt.GetKeyCode() == wx.WXK_RETURN:
+        if keycode == wx.WXK_RETURN:
             self._on_copy_password(None)
             return
 
         # If "Escape" was pressed, ignore key and clear the Search box
-        if evt.GetKeyCode() == wx.WXK_ESCAPE:
+        if keycode == wx.WXK_ESCAPE:
             self._on_search_cancel(None)
             return
 
         # If "Up" or "Down" was pressed, ignore key and focus self.list
-        if evt.GetKeyCode() in (wx.WXK_UP, wx.WXK_DOWN):
+        if keycode in (wx.WXK_UP, wx.WXK_DOWN):
             self.list.SetFocus()
+            return
+        if evt.GetModifiers() == wx.MOD_CONTROL and keycode == wx.WXK_CONTROL_U:
+            self._on_copy_username(None)
             return
 
         # Ignore all other keys
