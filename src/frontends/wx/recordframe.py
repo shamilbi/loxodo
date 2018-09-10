@@ -33,7 +33,8 @@ class RecordFrame(wx.Dialog):
     """
     def __init__(self, parent):
         wx.Dialog.__init__(self, parent, style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
-        wx.EVT_CLOSE(self, self._on_frame_close)
+        #wx.EVT_CLOSE(self, self._on_frame_close)
+        self.Bind(wx.EVT_CLOSE, self._on_frame_close)
         self.Bind(wx.EVT_CHAR_HOOK, self._on_escape)
 
         self.panel = wx.Panel(self, -1)
@@ -55,10 +56,12 @@ class RecordFrame(wx.Dialog):
 
         btnsizer = wx.StdDialogButtonSizer()
         btn = wx.Button(self.panel, wx.ID_CANCEL)
-        wx.EVT_BUTTON(self, wx.ID_CANCEL, self._on_cancel)
+        #wx.EVT_BUTTON(self, wx.ID_CANCEL, self._on_cancel)
+        btn.Bind(wx.EVT_BUTTON, self._on_cancel, id=wx.ID_CANCEL)
         btnsizer.AddButton(btn)
         btn = wx.Button(self.panel, wx.ID_OK)
-        wx.EVT_BUTTON(self, wx.ID_OK, self._on_ok)
+        #wx.EVT_BUTTON(self, wx.ID_OK, self._on_ok)
+        btn.Bind(wx.EVT_BUTTON, self._on_ok, id=wx.ID_OK)
         btn.SetDefault()
         btnsizer.AddButton(btn)
         btnsizer.Realize()
@@ -98,11 +101,13 @@ class RecordFrame(wx.Dialog):
         r_shown = wx.TextCtrl(self.panel, -1, default_value, size=(128, -1))
         r_shown.Hide()
         r_container.Add(r_shown, 1, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT|wx.EXPAND, 0)
-        r_toggle = wx.Button(self.panel, wx.ID_MORE, _("(un)mask"))
-        wx.EVT_BUTTON(self, wx.ID_MORE, self._on_toggle_passwd_mask)
+        r_toggle = wx.Button(self.panel, wx.ID_MORE, _("(un)&mask"))
+        #wx.EVT_BUTTON(self, wx.ID_MORE, self._on_toggle_passwd_mask)
+        r_toggle.Bind(wx.EVT_BUTTON, self._on_toggle_passwd_mask, id=wx.ID_MORE)
         r_container.Add(r_toggle, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT|wx.SHRINK|wx.LEFT, 10)
         r_generate = wx.Button(self.panel, wx.ID_REPLACE, _("generate"))
-        wx.EVT_BUTTON(self, wx.ID_REPLACE, self._on_generate_passwd)
+        #wx.EVT_BUTTON(self, wx.ID_REPLACE, self._on_generate_passwd)
+        r_generate.Bind(wx.EVT_BUTTON, self._on_generate_passwd, id=wx.ID_REPLACE)
         r_container.Add(r_generate, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALIGN_LEFT|wx.SHRINK|wx.LEFT, 10)
         return (r_masked, r_shown, r_toggle)
 
