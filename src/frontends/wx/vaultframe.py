@@ -49,7 +49,8 @@ class VaultFrame(wx.Frame):
             self.SetColumnWidth(0, 256)
             self.SetColumnWidth(1, 128)
             self.SetColumnWidth(2, 256)
-            self.sort_function = lambda e1, e2: cmp(e1.group.lower(), e2.group.lower())
+            #self.sort_function = lambda e1, e2: cmp(e1.group.lower(), e2.group.lower())
+            self.sort_function = lambda e1: e1.group.lower()
             self.update_fields()
 
         def OnGetItemText(self, item, col):
@@ -81,7 +82,7 @@ class VaultFrame(wx.Frame):
                 return
             self.displayed_entries = [record for record in self.vault.records if self.filter_record(record)]
 
-            self.displayed_entries.sort(self.sort_function)
+            self.displayed_entries.sort(key=self.sort_function)
             self.SetItemCount(len(self.displayed_entries))
             wx.ListCtrl.Refresh(self)
 
@@ -357,11 +358,14 @@ class VaultFrame(wx.Frame):
         """
         col = event.GetColumn()
         if (col == 0):
-            self.list.sort_function = lambda e1, e2: cmp(e1.title.lower(), e2.title.lower())
+            #self.list.sort_function = lambda e1, e2: cmp(e1.title.lower(), e2.title.lower())
+            self.list.sort_function = lambda e1: e1.title.lower()
         if (col == 1):
-            self.list.sort_function = lambda e1, e2: cmp(e1.user.lower(), e2.user.lower())
+            #self.list.sort_function = lambda e1, e2: cmp(e1.user.lower(), e2.user.lower())
+            self.list.sort_function = lambda e1: e1.user.lower()
         if (col == 2):
-            self.list.sort_function = lambda e1, e2: cmp(e1.group.lower(), e2.group.lower())
+            #self.list.sort_function = lambda e1, e2: cmp(e1.group.lower(), e2.group.lower())
+            self.list.sort_function = lambda e1: e1.group.lower()
         self.list.update_fields()
 
     def _on_list_contextmenu(self, dummy):

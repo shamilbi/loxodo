@@ -10,11 +10,13 @@ if platform.system() == "Windows" and platform.release() == "CE":
     sys.exit()
 
 # All other platforms use the Config module
-from src.config import config
+from src.config import config, PY3
 
 # store base script name, taking special care if we're "frozen" using py2app or py2exe
 if hasattr(sys,"frozen") and (sys.platform != 'darwin'):
     config.set_basescript(unicode(sys.executable, sys.getfilesystemencoding()))
+elif PY3:
+    config.set_basescript(__file__)
 else:
     config.set_basescript(unicode(__file__, sys.getfilesystemencoding()))
 
@@ -27,13 +29,13 @@ if len(sys.argv) > 1:
 try:
     import wx
     assert(wx.__version__.startswith('4.0.'))
-except AssertionError, e:
+except AssertionError as e:
     print >> sys.stderr, 'Found incompatible wxPython, the wxWidgets Python bindings: %s' % wx.__version__
     print >> sys.stderr, 'Falling back to cmdline frontend.'
     print >> sys.stderr, ''
     from src.frontends.cmdline import loxodo
     sys.exit()
-except ImportError, e:
+except ImportError as e:
     print >> sys.stderr, 'Could not find wxPython, the wxWidgets Python bindings: %s' % e
     print >> sys.stderr, 'Falling back to cmdline frontend.'
     print >> sys.stderr, ''

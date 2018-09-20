@@ -19,7 +19,11 @@
 
 import os
 import platform
-from ConfigParser import SafeConfigParser
+from . import PY3
+if PY3:
+    from configparser import ConfigParser as SafeConfigParser
+else:
+    from ConfigParser import SafeConfigParser
 
 
 class Config(object):

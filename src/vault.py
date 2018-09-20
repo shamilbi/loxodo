@@ -28,6 +28,10 @@ import uuid
 
 from .twofish.twofish_ecb import TwofishECB
 from .twofish.twofish_cbc import TwofishCBC
+from . import PY3
+if PY3:
+    unicode = str
+    file = open
 
 class Vault(object):
     """
@@ -141,7 +145,7 @@ class Vault(object):
             self._uuid = value
             raw_id = 0x01
             if (raw_id not in self.raw_fields):
-                self.raw_fields[raw_id] = Vault.Field(raw_id, 0, "")
+                self.raw_fields[raw_id] = Vault.Field(raw_id, 0, b"")
             self.raw_fields[raw_id].raw_value = value.bytes_le
             self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
             self.mark_modified()
@@ -214,7 +218,7 @@ class Vault(object):
             self._last_mod = value
             raw_id = 0x0c
             if (raw_id not in self.raw_fields):
-                self.raw_fields[raw_id] = Vault.Field(raw_id, 0, "0")
+                self.raw_fields[raw_id] = Vault.Field(raw_id, 0, b"0")
             self.raw_fields[raw_id].raw_value = struct.pack("<L", value)
             self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
 
@@ -291,11 +295,14 @@ class Vault(object):
         data = filehandle.read(16)
         if (not data) or (len(data) < 16):
             raise self.VaultFormatError("EOF encountered when parsing record field")
-        if data == "PWS3-EOFPWS3-EOF":
+        if data == b"PWS3-EOFPWS3-EOF":
             return None
         data = cipher.decrypt(data)
         raw_len = struct.unpack("<L", data[0:4])[0]
-        raw_type = struct.unpack("<B", data[4])[0]
+        if PY3:
+            raw_type = struct.unpack("<B", bytes([data[4]]))[0]
+        else:
+            raw_type = struct.unpack("<B", data[4])[0]
         raw_value = data[5:]
         if (raw_len > 11):
             for dummy in range((raw_len+4)//16):
@@ -311,7 +318,7 @@ class Vault(object):
         try:
             return os.urandom(count)
         except NotImplementedError:
-            retval = ""
+            retval = b""
             for dummy in range(count):
                 retval += struct.pack("<B", random.randint(0, 0xFF))
             return retval
@@ -321,7 +328,7 @@ class Vault(object):
         Write one field of a vault record using the given file handle.
         """
         if (field is None):
-            filehandle.write("PWS3-EOFPWS3-EOF")
+            filehandle.write(b"PWS3-EOFPWS3-EOF")
             return
 
         assert len(field.raw_value) == field.raw_len
@@ -365,7 +372,7 @@ class Vault(object):
 
         self.f_iv = Vault._urandom(16)
 
-        hmac_checker = HMAC(key_l, "", hashlib.sha256)
+        hmac_checker = HMAC(key_l, b"", hashlib.sha256)
         cipher = TwofishCBC(key_k, self.f_iv)
 
         # No records yet
@@ -383,7 +390,7 @@ class Vault(object):
         # read boilerplate
 
         self.f_tag = filehandle.read(4)  # TAG: magic tag
-        if (self.f_tag != 'PWS3'):
+        if (self.f_tag != b'PWS3'):
             raise self.VaultVersionError("Not a PasswordSafe V3 file")
 
         self.f_salt = filehandle.read(32)  # SALT: SHA-256 salt
@@ -406,7 +413,7 @@ class Vault(object):
 
         self.f_iv = filehandle.read(16)  # IV: initialization vector of Twofish CBC
 
-        hmac_checker = HMAC(key_l, "", hashlib.sha256)
+        hmac_checker = HMAC(key_l, b"", hashlib.sha256)
         cipher = TwofishCBC(key_k, self.f_iv)
 
         # read header
@@ -442,7 +449,7 @@ class Vault(object):
         if (self.f_hmac != my_hmac):
             raise self.VaultFormatError("File integrity check failed")
 
-        self.records.sort()
+        self.records.sort(key=lambda r: r._group + r._title)
         filehandle.close()
 
     def write_to_file(self, filename, password):
@@ -483,10 +490,10 @@ class Vault(object):
 
         filehandle.write(self.f_iv)
 
-        hmac_checker = HMAC(key_l, "", hashlib.sha256)
+        hmac_checker = HMAC(key_l, b"", hashlib.sha256)
         cipher = TwofishCBC(key_k, self.f_iv)
 
-        end_of_record = self.Field(0xff, 0, "")
+        end_of_record = self.Field(0xff, 0, b"")
 
         for field in self.header.raw_fields.values():
             self._write_field_tlv(filehandle, cipher, field)
