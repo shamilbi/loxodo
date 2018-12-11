@@ -50,25 +50,25 @@ class InteractiveConsole(cmd.Cmd):
         self.prompt = "[none]> "
 
     def open_vault(self):
-        print "Opening " + self.vault_file_name + "..."
+        print("Opening " + self.vault_file_name + "...")
         try:
             self.vault_password = getpass("Vault password: ")
         except EOFError:
-            print "\n\nBye."
+            print("\n\nBye.")
             raise RuntimeError("No password given")
         try:
             self.vault = Vault(self.vault_password, filename=self.vault_file_name)
             self.prompt = "[" + os.path.basename(self.vault_file_name) + "]> "
         except Vault.BadPasswordError:
-            print "Bad password."
+            print("Bad password.")
             raise
         except Vault.VaultVersionError:
-            print "This is not a PasswordSafe V3 Vault."
+            print("This is not a PasswordSafe V3 Vault.")
             raise
         except Vault.VaultFormatError:
-            print "Vault integrity check failed."
+            print("Vault integrity check failed.")
             raise
-        print "... Done.\n"
+        print("... Done.\n")
 
     def postloop(self):
         print
@@ -84,8 +84,8 @@ class InteractiveConsole(cmd.Cmd):
             cmd.Cmd.do_help(self, line)
             return
 
-        print "\nCommands:"
-        print "  ".join(("ls", "show", "quit", "add", "save", "import"))
+        print("\nCommands:")
+        print("  ".join(("ls", "show", "quit", "add", "save", "import")))
         print
 
     def do_quit(self, line):
@@ -99,7 +99,7 @@ class InteractiveConsole(cmd.Cmd):
         if self.vault_modified and self.vault_file_name and self.vault_password:
             self.vault.write_to_file(self.vault_file_name, self.vault_password)
             self.vault_modified = False
-            print "Changes Saved"
+            print("Changes Saved")
 
     def do_EOF(self, line):
         """
@@ -128,14 +128,14 @@ class InteractiveConsole(cmd.Cmd):
         passwd = getpass("Password: ")
         passwd2 = getpass("Re-Type Password: ")
         if passwd != passwd2:
-            print "Passwords don't match"
+            print("Passwords don't match")
             return
 
         entry.passwd = passwd
 
         self.vault.records.append(entry)
         self.vault_modified = True
-        print "User Added, but not saved"
+        print("User Added, but not saved")
 
     def do_import(self, line):
         """
@@ -159,8 +159,8 @@ class InteractiveConsole(cmd.Cmd):
                 entry.group = row[4]
                 self.vault.records.append(entry)
             self.vault_modified = True
-            print "Import completed, but not saved."
-        except csv.Error, e:
+            print("Import completed, but not saved.")
+        except csv.Error as e:
             sys.exit('file %s, line %d: %s' % (line, data.line_num, e))
 
     def do_ls(self, line):
@@ -178,11 +178,11 @@ class InteractiveConsole(cmd.Cmd):
             vault_records.sort(lambda e1, e2: cmp(e1.title, e2.title))
 
         if vault_records is None:
-            print "No matches found."
+            print("No matches found.")
             return
 
         for record in vault_records:
-            print record.title.encode('utf-8', 'replace') + " [" + record.user.encode('utf-8', 'replace') + "]"
+            print(record.title.encode('utf-8', 'replace') + " [" + record.user.encode('utf-8', 'replace') + "]")
 
     def do_show(self, line, echo=True, passwd=False):
         """
@@ -195,29 +195,29 @@ class InteractiveConsole(cmd.Cmd):
         matches = self.find_titles(line)
 
         if matches is None:
-            print 'No entry found for "%s"' % line
+            print('No entry found for "%s"' % line)
             return
 
         for record in matches:
             if echo is True:
-                print """
+                print("""
 %s.%s
 Username : %s
 Password : %s""" % (record.group.encode('utf-8', 'replace'),
                     record.title.encode('utf-8', 'replace'),
                     record.user.encode('utf-8', 'replace'),
-                    record.passwd.encode('utf-8', 'replace'))
+                    record.passwd.encode('utf-8', 'replace')))
             else:
-                print """
+                print("""
 %s.%s
 Username : %s""" % (record.group.encode('utf-8', 'replace'),
                     record.title.encode('utf-8', 'replace'),
-                    record.user.encode('utf-8', 'replace'))
+                    record.user.encode('utf-8', 'replace')))
 
             if record.notes.strip():
-                print "Notes    :\n\t :", record.notes.encode('utf-8', 'replace').replace("\n", "\n\t : "), "\n"
+                print("Notes    :\n\t :" + record.notes.encode('utf-8', 'replace').replace("\n", "\n\t : ") + "\n")
 
-            print ""
+            print("")
 
             if pygtk is not None and gtk is not None:
                 cb = gtk.clipboard_get()
@@ -275,12 +275,12 @@ def main(argv):
     if (len(args) < 1):
         if (config.recentvaults):
             interactiveConsole.vault_file_name = config.recentvaults[0]
-            print "No Vault specified, using " + interactiveConsole.vault_file_name
+            print("No Vault specified, using " + interactiveConsole.vault_file_name)
         else:
-            print "No Vault specified, and none found in config."
+            print("No Vault specified, and none found in config.")
             sys.exit(2)
     elif (len(args) > 1):
-        print "More than one Vault specified"
+        print("More than one Vault specified")
         sys.exit(2)
     else:
         interactiveConsole.vault_file_name = args[0]
