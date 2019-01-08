@@ -34,6 +34,25 @@ except ImportError:
 
 from ...vault import Vault
 from ...config import config
+from ... import PY3
+
+
+def print_arr(*args):
+    if PY3:
+        print(''.join(args))
+    else:
+        print(''.join([i.encode('utf-8', 'replace') for i in args]))
+
+
+def print_s(s, *args):
+    if args:
+        if PY3:
+            print(s % args)
+        else:
+            print(s % [i.encode('utf-8', 'replace') for i in args])
+    else:
+        print(s)
+
 
 class InteractiveConsole(cmd.Cmd):
 
@@ -53,6 +72,9 @@ class InteractiveConsole(cmd.Cmd):
         print("Opening " + self.vault_file_name + "...")
         try:
             self.vault_password = getpass("Vault password: ")
+            if not isinstance(self.vault_password, bytes):
+                # PY3
+                self.vault_password = self.vault_password.encode('utf-8')
         except EOFError:
             print("\n\nBye.")
             raise RuntimeError("No password given")
@@ -182,7 +204,7 @@ class InteractiveConsole(cmd.Cmd):
             return
 
         for record in vault_records:
-            print(record.title.encode('utf-8', 'replace') + " [" + record.user.encode('utf-8', 'replace') + "]")
+            print_arr(record.title, ' [', record.user, ']')
 
     def do_show(self, line, echo=True, passwd=False):
         """
@@ -200,22 +222,17 @@ class InteractiveConsole(cmd.Cmd):
 
         for record in matches:
             if echo is True:
-                print("""
+                print_s("""
 %s.%s
 Username : %s
-Password : %s""" % (record.group.encode('utf-8', 'replace'),
-                    record.title.encode('utf-8', 'replace'),
-                    record.user.encode('utf-8', 'replace'),
-                    record.passwd.encode('utf-8', 'replace')))
+Password : %s""", record.group, record.title, record.user, record.passwd)
             else:
-                print("""
+                print_s("""
 %s.%s
-Username : %s""" % (record.group.encode('utf-8', 'replace'),
-                    record.title.encode('utf-8', 'replace'),
-                    record.user.encode('utf-8', 'replace')))
+Username : %s""", record.group, record.title, record.user)
 
             if record.notes.strip():
-                print("Notes    :\n\t :" + record.notes.encode('utf-8', 'replace').replace("\n", "\n\t : ") + "\n")
+                print_arr("Notes    :\n\t :", record.notes.replace("\n", "\n\t : "), "\n")
 
             print("")
 
