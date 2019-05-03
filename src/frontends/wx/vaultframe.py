@@ -18,6 +18,7 @@
 #
 
 import os
+import csv
 import wx
 import wx.adv
 
@@ -164,10 +165,17 @@ class VaultFrame(wx.Frame):
         filemenu.Append(temp_id, _("Change &Password") + "...")
         #wx.EVT_MENU(self, temp_id, self._on_change_password)
         self.Bind(wx.EVT_MENU, self._on_change_password, id=temp_id)
+
         temp_id = wx.NewId()
         filemenu.Append(temp_id, _("&Merge Records from") + "...")
         #wx.EVT_MENU(self, temp_id, self._on_merge_vault)
         self.Bind(wx.EVT_MENU, self._on_merge_vault, id=temp_id)
+
+        # export to csv
+        temp_id = wx.NewId()
+        filemenu.Append(temp_id, _("&Export to CSV") + "...")
+        self.Bind(wx.EVT_MENU, self._on_export_csv, id=temp_id)
+
         filemenu.Append(wx.ID_ABOUT, _("&About"))
         #wx.EVT_MENU(self, wx.ID_ABOUT, self._on_about)
         self.Bind(wx.EVT_MENU, self._on_about, id=wx.ID_ABOUT)
@@ -451,6 +459,22 @@ if not, write to the Free Software Foundation, Inc.,
         self.vault_password = password_new
         self.statusbar.SetStatusText(_('Changed Vault password'), 0)
         self.mark_modified()
+
+    def _on_export_csv(self, dummy):
+        wildcard = "|".join((_("CSV files") + " (*.csv)", "*.csv", _("All files") + " (*.*)", "*.*"))
+        dialog = wx.FileDialog(self, message=_("Save to CSV..."),
+                               defaultDir=os.path.dirname(self.vault_file_name),
+                               defaultFile='', wildcard=wildcard,
+                               style=wx.FD_SAVE)
+        with dialog:
+            if dialog.ShowModal() != wx.ID_OK:
+                return
+            filename = dialog.GetPath()
+        with open(filename, 'w', newline='') as fp:
+            writer = csv.writer(fp, dialect='unix')
+            writer.writerow(('Group', 'Title', 'Username', 'Password', 'URL', 'Notes'))
+            for r in self.vault.records:
+                writer.writerow((r.group, r.title, r.user, r.passwd, r.url, r.notes.replace('\r\n', '\n')))
 
     def _on_merge_vault(self, dummy):
         wildcard = "|".join((_("Vault") + " (*.psafe3)", "*.psafe3", _("All files") + " (*.*)", "*.*"))
