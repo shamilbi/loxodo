@@ -45,7 +45,7 @@ class RecordFrame(wx.Dialog):
         self._tc_group = self._add_a_textcontrol(_sz_fields, _("&Group") + ":", "")
         self._tc_user = self._add_a_textcontrol(_sz_fields, _("&Username") + ":", "")
         (self._tc_passwd, self._tc_passwd_alt, self._bt_showhide) = self._add_a_passwdfield(_sz_fields, _("Password") + ":", "")
-        self._tc_url = self._add_a_textcontrol(_sz_fields, _("&URL") + ":", "")
+        self._tc_url = self._add_a_textcontrol(_sz_fields, _("UR&L") + ":", "")
         self._tc_notes = self._add_a_textbox(_sz_fields, _("&Notes") + ":", "")
         _sz_main.Add(_sz_fields, 1, wx.EXPAND | wx.GROW)
         _sz_fields.AddGrowableCol(1)
