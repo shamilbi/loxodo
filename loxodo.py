@@ -1,26 +1,34 @@
 #!/usr/bin/env python3
 
+#
+# Loxodo -- Password Safe V3 compatible Password Vault
+# Copyright (C) 2008-2018 Christoph Sommer <mail@christoph-sommer.de>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+
 import sys
 import platform
 
-# On Windows CE, use the "ppygui" frontend.
-if platform.system() == "Windows" and platform.release() == "CE":
-    from src.frontends.ppygui import loxodo
-    sys.exit()
-
-# All other platforms use the Config module
 from src.config import config, PY3
-
-if PY3:
-    unicode = str
 
 # store base script name, taking special care if we're "frozen" using py2app or py2exe
 if hasattr(sys, "frozen") and (sys.platform != 'darwin'):
-    config.set_basescript(unicode(sys.executable, sys.getfilesystemencoding()))
-elif PY3:
-    config.set_basescript(__file__)
+    config.set_basescript(sys.executable)
 else:
-    config.set_basescript(unicode(__file__, sys.getfilesystemencoding()))
+    config.set_basescript(__file__)
 
 # If cmdline arguments were given, use the "cmdline" frontend.
 if len(sys.argv) > 1:
