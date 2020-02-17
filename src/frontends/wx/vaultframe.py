@@ -233,6 +233,14 @@ class VaultFrame(wx.Frame):
 
         self._searchbox.SetFocus()
 
+        # icon
+        self.icon = wx.Icon(
+            os.path.join(
+                os.path.dirname(os.path.realpath(config.get_basescript())),
+                "resources", "loxodo-icon.png"),
+            wx.BITMAP_TYPE_PNG, 128, 128)
+        self.SetIcon(self.icon)
+
         self.vault_file_name = None
         self.vault_password = None
         self.vault = None
