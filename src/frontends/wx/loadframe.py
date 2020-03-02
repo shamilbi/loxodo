@@ -17,7 +17,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-import os
 import wx
 from wx.lib import filebrowsebutton
 
@@ -25,7 +24,7 @@ from .wxlocale import _
 from .vaultframe import VaultFrame
 from ...vault import Vault
 from ...config import config
-from .paths import get_resourcedir
+from . import get_bitmap, get_icon
 
 
 class LoadFrame(wx.Frame):
@@ -39,7 +38,8 @@ class LoadFrame(wx.Frame):
         self.panel_1 = wx.Panel(self, -1)
         self._lb_passwd = wx.StaticText(self.panel_1, -1, _("Password") + ":")
         self._tc_passwd = wx.TextCtrl(self.panel_1, -1, "", style=wx.TE_PASSWORD)
-        self.bitmap_1 = wx.StaticBitmap(self.panel_1, -1, wx.Bitmap(os.path.join(get_resourcedir(), "loxodo-icon.png"), wx.BITMAP_TYPE_ANY))
+        self.bitmap_1 = wx.StaticBitmap(self.panel_1, -1, get_bitmap('loxodo-icon.png'))
+        self.SetIcon(get_icon('loxodo-icon.png', 128, 128))
         self._fb_filename = filebrowsebutton.FileBrowseButtonWithHistory(self.panel_1, -1, size=(450, -1),  changeCallback = self._on_pickvault, labelText = _("Vault") + ":")
         if (config.recentvaults):
             self._fb_filename.SetHistory(config.recentvaults, 0)

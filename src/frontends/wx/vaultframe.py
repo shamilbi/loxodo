@@ -22,6 +22,7 @@ import csv
 import wx
 import wx.adv
 
+from . import get_bitmap, get_icon
 from .wxlocale import _
 from ...vault import Vault
 from ...config import config
@@ -29,7 +30,6 @@ from .recordframe import RecordFrame
 from .mergeframe import MergeFrame
 from .settings import Settings
 
-from .paths import get_resourcedir
 
 class VaultFrame(wx.Frame):
     """
@@ -234,11 +234,7 @@ class VaultFrame(wx.Frame):
         self._searchbox.SetFocus()
 
         # icon
-        self.icon = wx.Icon(
-            os.path.join(
-                os.path.dirname(os.path.realpath(config.get_basescript())),
-                "resources", "loxodo-icon.png"),
-            wx.BITMAP_TYPE_PNG, 128, 128)
+        self.icon = get_icon('loxodo-icon.png', 128, 128)
         self.SetIcon(self.icon)
 
         self.vault_file_name = None
@@ -378,7 +374,7 @@ if not, write to the Free Software Foundation, Inc.,
                       )
 
         about = wx.adv.AboutDialogInfo()
-        about.SetIcon(wx.Icon(os.path.join(get_resourcedir(), "loxodo-icon.png"), wx.BITMAP_TYPE_PNG, 128, 128))
+        about.SetIcon(get_icon("loxodo-icon.png", 128, 128))
         about.SetName("Loxodo")
         about.SetVersion("0.0-git")
         about.SetCopyright("Copyright (C) 2008 Christoph Sommer <mail@christoph-sommer.de>")

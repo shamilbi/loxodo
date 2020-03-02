@@ -16,3 +16,25 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
+
+import os
+from io import BytesIO
+from importlib.resources import open_binary
+import wx
+
+
+def get_image(fname):
+    with open_binary('src.resources', fname) as fp:
+        return wx.Image(fp)
+
+
+def get_bitmap(fname):
+    return wx.Bitmap(get_image(fname))
+
+
+def get_icon(fname, width, height):
+    icon = wx.Icon()
+    icon.CopyFromBitmap(get_bitmap(fname))
+    icon.SetWidth(width)
+    icon.SetHeight(height)
+    return icon

@@ -21,15 +21,9 @@ import os
 
 from ...config import config
 
-def get_resourcedir():
-    adjacent_dir = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, os.pardir, 'resources')
-    if (os.path.exists(adjacent_dir)):
-        return adjacent_dir
-    else:
-        return os.path.join(os.path.dirname(os.path.realpath(config.get_basescript())), "resources")
 
 def get_localedir():
-    adjacent_dir = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, os.pardir, 'locale')
+    adjacent_dir = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'locale')
     if (os.path.exists(adjacent_dir)):
         return adjacent_dir
     else:

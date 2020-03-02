@@ -72,9 +72,9 @@ else:
                     'src.frontends.wx',
                     'src.twofish'],
         package_data = {
-            'src.frontends.wx': [
-                '../../../resources/*',
-                '../../../locale/de/LC_MESSAGES/*'
+            'src': [
+                'resources/*',
+                'locale/de/LC_MESSAGES/*'
             ],
         },
     )
