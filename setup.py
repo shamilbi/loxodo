@@ -65,7 +65,9 @@ else:
         description = 'A Password Safe V3 compatible password vault',
         download_url = 'http://github.com/sommer/loxodo/zipball/master',
         license = 'GPL-2.0+',
-        scripts = [ 'loxodo.py' ],
+        entry_points = {
+            'console_scripts': [
+                'loxodo = src.__main__:main']},
         packages = ['src',
                     'src.frontends',
                     'src.frontends.cmdline',
