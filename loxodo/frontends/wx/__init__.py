@@ -24,7 +24,7 @@ import wx
 
 
 def get_image(fname):
-    with open_binary('src.resources', fname) as fp:
+    with open_binary('loxodo.resources', fname) as fp:
         return wx.Image(fp)
 
 

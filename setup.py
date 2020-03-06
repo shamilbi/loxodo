@@ -21,7 +21,7 @@ if sys.platform == 'darwin':
             py2app = dict(
                 argv_emulation = False,
                 iconfile = 'resources/loxodo-icon.icns',
-                packages = ['src', 'wx'],
+                packages = ['loxodo', 'wx'],
                 site_packages = True,
                 resources = ['resources', 'locale', 'LICENSE.txt', 'README.txt']
             )
@@ -58,7 +58,7 @@ elif sys.platform == 'win32':
     setup(**extra_options)
 else:
     extra_options = dict(
-        name = 'Loxodo',
+        name = 'loxodo',
         author = 'Christoph Sommer',
         author_email = 'mail@christoph-sommer.de',
         url = 'http://www.christoph-sommer.de/loxodo/',
@@ -67,14 +67,14 @@ else:
         license = 'GPL-2.0+',
         entry_points = {
             'console_scripts': [
-                'loxodo = src.__main__:main']},
-        packages = ['src',
-                    'src.frontends',
-                    'src.frontends.cmdline',
-                    'src.frontends.wx',
-                    'src.twofish'],
+                'loxodo = loxodo.__main__:main']},
+        packages = ['loxodo',
+                    'loxodo.frontends',
+                    'loxodo.frontends.cmdline',
+                    'loxodo.frontends.wx',
+                    'loxodo.twofish'],
         package_data = {
-            'src': [
+            'loxodo': [
                 'resources/*',
                 'locale/de/LC_MESSAGES/*'
             ],
