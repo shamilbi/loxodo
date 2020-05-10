@@ -70,13 +70,10 @@ class Vault:
         """
         Contains the raw, on-disk representation of a record's field.
         """
-        def __init__(self, raw_type, raw_len, raw_value):
+        def __init__(self, raw_type, raw_value):
             self.raw_type = raw_type
-            self.raw_len = raw_len
             self.raw_value = raw_value
-
-        #def is_equal(self, field):
-        #    return self.raw_type == field.raw_type and self.raw_value == field.raw_value
+            self.raw_len = len(raw_value)
 
     class Header:
         """
@@ -132,8 +129,6 @@ class Vault:
         def mark_modified(self):
             self.last_mod = int(time.time())
 
-        # TODO: refactor Record._set_xyz methods to be less repetitive
-
         @property
         def uuid(self):
             return self._uuid
@@ -142,10 +137,7 @@ class Vault:
         def uuid(self, value):
             self._uuid = value
             raw_id = 0x01
-            if raw_id not in self.raw_fields:
-                self.raw_fields[raw_id] = Vault.Field(raw_id, 0, b"")
-            self.raw_fields[raw_id].raw_value = value.bytes_le
-            self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
+            self.raw_fields[raw_id] = Vault.Field(raw_id, value.bytes_le)
             self.mark_modified()
 
         @property
@@ -156,10 +148,7 @@ class Vault:
         def group(self, value):
             self._group = value
             raw_id = 0x02
-            if raw_id not in self.raw_fields:
-                self.raw_fields[raw_id] = Vault.Field(raw_id, len(value), value)
-            self.raw_fields[raw_id].raw_value = value.encode('utf_8', 'replace')
-            self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
+            self.raw_fields[raw_id] = Vault.Field(raw_id, value.encode('utf_8', 'replace'))
             self.mark_modified()
 
         @property
@@ -170,10 +159,7 @@ class Vault:
         def title(self, value):
             self._title = value
             raw_id = 0x03
-            if raw_id not in self.raw_fields:
-                self.raw_fields[raw_id] = Vault.Field(raw_id, len(value), value)
-            self.raw_fields[raw_id].raw_value = value.encode('utf_8', 'replace')
-            self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
+            self.raw_fields[raw_id] = Vault.Field(raw_id, value.encode('utf_8', 'replace'))
             self.mark_modified()
 
         @property
@@ -184,10 +170,7 @@ class Vault:
         def user(self, value):
             self._user = value
             raw_id = 0x04
-            if raw_id not in self.raw_fields:
-                self.raw_fields[raw_id] = Vault.Field(raw_id, len(value), value)
-            self.raw_fields[raw_id].raw_value = value.encode('utf_8', 'replace')
-            self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
+            self.raw_fields[raw_id] = Vault.Field(raw_id, value.encode('utf_8', 'replace'))
             self.mark_modified()
 
         @property
@@ -198,10 +181,7 @@ class Vault:
         def notes(self, value):
             self._notes = value
             raw_id = 0x05
-            if raw_id not in self.raw_fields:
-                self.raw_fields[raw_id] = Vault.Field(raw_id, len(value), value)
-            self.raw_fields[raw_id].raw_value = value.encode('utf_8', 'replace')
-            self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
+            self.raw_fields[raw_id] = Vault.Field(raw_id, value.encode('utf_8', 'replace'))
             self.mark_modified()
 
         @property
@@ -212,10 +192,7 @@ class Vault:
         def passwd(self, value):
             self._passwd = value
             raw_id = 0x06
-            if raw_id not in self.raw_fields:
-                self.raw_fields[raw_id] = Vault.Field(raw_id, len(value), value)
-            self.raw_fields[raw_id].raw_value = value.encode('utf_8', 'replace')
-            self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
+            self.raw_fields[raw_id] = Vault.Field(raw_id, value.encode('utf_8', 'replace'))
             self.mark_modified()
 
         @property
@@ -226,10 +203,7 @@ class Vault:
         def last_mod(self, value: int):
             self._last_mod = value
             raw_id = 0x0c
-            if raw_id not in self.raw_fields:
-                self.raw_fields[raw_id] = Vault.Field(raw_id, 0, b"0")
-            self.raw_fields[raw_id].raw_value = struct.pack("<L", value)
-            self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
+            self.raw_fields[raw_id] = Vault.Field(raw_id, struct.pack("<L", value))
 
         @property
         def url(self):
@@ -239,10 +213,7 @@ class Vault:
         def url(self, value):
             self._url = value
             raw_id = 0x0d
-            if raw_id not in self.raw_fields:
-                self.raw_fields[raw_id] = Vault.Field(raw_id, len(value), value)
-            self.raw_fields[raw_id].raw_value = value.encode('utf_8', 'replace')
-            self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
+            self.raw_fields[raw_id] = Vault.Field(raw_id, value.encode('utf_8', 'replace'))
             self.mark_modified()
 
         def is_corresponding(self, record):
@@ -301,13 +272,13 @@ class Vault:
         #   data = [int]
         raw_value = data[5:]
         if raw_len > 11:
-            for dummy in range((raw_len+4)//16):
+            for _ in range((raw_len+4)//16):
                 data = filehandle.read(16)
                 if not data or len(data) < 16:
                     raise self.VaultFormatError("EOF encountered when parsing record field")
                 raw_value += cipher.decrypt(data)
         raw_value = raw_value[:raw_len]
-        return self.Field(raw_type, raw_len, raw_value)
+        return self.Field(raw_type, raw_value)
 
     @staticmethod
     def _urandom(count):
@@ -451,9 +422,9 @@ class Vault:
         Store contents of this Vault into a file.
         """
         _last_save = struct.pack("<L", int(time.time()))
-        self.header.raw_fields[0x04] = self.Field(0x04, len(_last_save), _last_save)
+        self.header.raw_fields[0x04] = self.Field(0x04, _last_save)
         _what_saved = "Loxodo 0.0-git".encode("utf_8", "replace")
-        self.header.raw_fields[0x06] = self.Field(0x06, len(_what_saved), _what_saved)
+        self.header.raw_fields[0x06] = self.Field(0x06, _what_saved)
 
         # write to temporary file first
         (osfilehandle, tmpfilename) = tempfile.mkstemp(
@@ -486,7 +457,7 @@ class Vault:
         hmac_checker = HMAC(key_l, b"", hashlib.sha256)
         cipher = TwofishCBC(key_k, self.f_iv)
 
-        end_of_record = self.Field(0xff, 0, b"")
+        end_of_record = self.Field(0xff, b"")
 
         for field in self.header.raw_fields.values():
             self._write_field_tlv(filehandle, cipher, field)
