@@ -30,7 +30,6 @@ import uuid
 
 from loxodo.twofish.twofish_ecb import TwofishECB
 from loxodo.twofish.twofish_cbc import TwofishCBC
-from loxodo import PY3
 
 
 class Vault:
@@ -135,10 +134,12 @@ class Vault:
 
         # TODO: refactor Record._set_xyz methods to be less repetitive
 
-        def _get_uuid(self):
+        @property
+        def uuid(self):
             return self._uuid
 
-        def _set_uuid(self, value):
+        @uuid.setter
+        def uuid(self, value):
             self._uuid = value
             raw_id = 0x01
             if raw_id not in self.raw_fields:
@@ -147,10 +148,12 @@ class Vault:
             self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
             self.mark_modified()
 
-        def _get_group(self):
+        @property
+        def group(self):
             return self._group
 
-        def _set_group(self, value):
+        @group.setter
+        def group(self, value):
             self._group = value
             raw_id = 0x02
             if raw_id not in self.raw_fields:
@@ -159,10 +162,12 @@ class Vault:
             self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
             self.mark_modified()
 
-        def _get_title(self):
+        @property
+        def title(self):
             return self._title
 
-        def _set_title(self, value):
+        @title.setter
+        def title(self, value):
             self._title = value
             raw_id = 0x03
             if raw_id not in self.raw_fields:
@@ -171,10 +176,12 @@ class Vault:
             self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
             self.mark_modified()
 
-        def _get_user(self):
+        @property
+        def user(self):
             return self._user
 
-        def _set_user(self, value):
+        @user.setter
+        def user(self, value):
             self._user = value
             raw_id = 0x04
             if raw_id not in self.raw_fields:
@@ -183,10 +190,12 @@ class Vault:
             self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
             self.mark_modified()
 
-        def _get_notes(self):
+        @property
+        def notes(self):
             return self._notes
 
-        def _set_notes(self, value):
+        @notes.setter
+        def notes(self, value):
             self._notes = value
             raw_id = 0x05
             if raw_id not in self.raw_fields:
@@ -195,10 +204,12 @@ class Vault:
             self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
             self.mark_modified()
 
-        def _get_passwd(self):
+        @property
+        def passwd(self):
             return self._passwd
 
-        def _set_passwd(self, value):
+        @passwd.setter
+        def passwd(self, value):
             self._passwd = value
             raw_id = 0x06
             if raw_id not in self.raw_fields:
@@ -207,10 +218,12 @@ class Vault:
             self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
             self.mark_modified()
 
-        def _get_last_mod(self) -> int:
+        @property
+        def last_mod(self) -> int:
             return self._last_mod
 
-        def _set_last_mod(self, value: int):
+        @last_mod.setter
+        def last_mod(self, value: int):
             self._last_mod = value
             raw_id = 0x0c
             if raw_id not in self.raw_fields:
@@ -218,10 +231,12 @@ class Vault:
             self.raw_fields[raw_id].raw_value = struct.pack("<L", value)
             self.raw_fields[raw_id].raw_len = len(self.raw_fields[raw_id].raw_value)
 
-        def _get_url(self):
+        @property
+        def url(self):
             return self._url
 
-        def _set_url(self, value):
+        @url.setter
+        def url(self, value):
             self._url = value
             raw_id = 0x0d
             if raw_id not in self.raw_fields:
@@ -251,22 +266,6 @@ class Vault:
             self.raw_fields = {}
             for field in record.raw_fields.values():
                 self.add_raw_field(field)
-
-
-        uuid = property(_get_uuid, _set_uuid)
-        group = property(_get_group, _set_group)
-        title = property(_get_title, _set_title)
-        user = property(_get_user, _set_user)
-        notes = property(_get_notes, _set_notes)
-        passwd = property(_get_passwd, _set_passwd)
-        last_mod = property(_get_last_mod, _set_last_mod)
-        url = property(_get_url, _set_url)
-
-        #def __cmp__(self, other):
-        #    """
-        #    Compare Based on Group, then by Title
-        #    """
-        #    return cmp(self._group+self._title, other._group+other._title)
 
         def for_cmp(self):
             return self._group + self._title
@@ -298,10 +297,8 @@ class Vault:
             return None
         data = cipher.decrypt(data)
         raw_len = struct.unpack("<L", data[0:4])[0]
-        if PY3:
-            raw_type = struct.unpack("<B", bytes([data[4]]))[0]
-        else:
-            raw_type = struct.unpack("<B", data[4])[0]
+        raw_type = struct.unpack("<B", bytes([data[4]]))[0]
+        #   data = [int]
         raw_value = data[5:]
         if raw_len > 11:
             for dummy in range((raw_len+4)//16):
