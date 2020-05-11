@@ -17,16 +17,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
+# pylint: disable=too-many-instance-attributes
+
 import os
 import platform
-from . import PY3
-if PY3:
-    from configparser import ConfigParser as SafeConfigParser
-else:
-    from ConfigParser import SafeConfigParser
+from configparser import ConfigParser as SafeConfigParser
 
 
-class Config(object):
+class Config:
     """
     Manages the configuration file
     """
@@ -52,7 +50,7 @@ class Config(object):
             self._parser.add_section("base")
 
         for num in range(10):
-            if (not self._parser.has_option("base", "recentvaults" + str(num))):
+            if not self._parser.has_option("base", "recentvaults" + str(num)):
                 break
             self.recentvaults.append(self._parser.get("base", "recentvaults" + str(num)))
 
@@ -84,7 +82,7 @@ class Config(object):
         return self._basescript
 
     def save(self):
-        if (not os.path.exists(os.path.dirname(self._fname))):
+        if not os.path.exists(os.path.dirname(self._fname)):
             os.mkdir(os.path.dirname(self._fname))
 
         # remove duplicates and trim to 10 items
@@ -94,7 +92,7 @@ class Config(object):
                 continue
             self._parser.set("base", "recentvaults" + str(len(_saved_recentvaults)), item)
             _saved_recentvaults.append(item)
-            if (len(_saved_recentvaults) >= 10):
+            if len(_saved_recentvaults) >= 10:
                 break
 
         self._parser.set("base", "pwlength", str(self.pwlength))
@@ -120,13 +118,13 @@ class Config(object):
 
         # On Microsoft Windows, config files go to $APPDATA/foo/
         if platform.system() in ("Windows", "Microsoft"):
-            if ("APPDATA" in os.environ):
+            if "APPDATA" in os.environ:
                 base_path = os.environ["APPDATA"]
                 if os.path.isdir(base_path):
                     return os.path.join(base_path, base_fname, base_fname + ".ini")
 
         # Allow config directory override as per freedesktop.org XDG Base Directory Specification
-        if ("XDG_CONFIG_HOME" in os.environ):
+        if "XDG_CONFIG_HOME" in os.environ:
             base_path = os.environ["XDG_CONFIG_HOME"]
             if os.path.isdir(base_path):
                 return os.path.join(base_path, base_fname, base_fname + ".ini")
@@ -135,7 +133,6 @@ class Config(object):
         base_path = os.path.join(os.path.expanduser("~"), ".config")
         if os.path.isdir(base_path):
             return os.path.join(base_path, base_fname, base_fname + ".ini")
-        else:
-            return os.path.join(os.path.expanduser("~"),"."+ base_fname + ".ini")
+        return os.path.join(os.path.expanduser("~"), "." + base_fname + ".ini")
 
 config = Config()

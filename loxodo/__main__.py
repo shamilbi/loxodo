@@ -22,7 +22,7 @@
 import sys
 import platform
 
-from loxodo.config import config, PY3
+from loxodo.config import config
 
 # store base script name, taking special care if we're "frozen" using py2app or py2exe
 if hasattr(sys, "frozen") and (sys.platform != 'darwin'):
