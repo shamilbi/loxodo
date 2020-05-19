@@ -343,12 +343,7 @@ class Vault:
 
         self.f_hmac = hmac_checker.digest()
 
-    def _read_from_file(self, filename, password: bytes):
-        """
-        Initialize all class members by loading the contents of a Vault stored in the given file.
-        """
-        filehandle = open(filename, 'rb')
-
+    def _read_from_stream(self, filehandle, password: bytes):
         # read boilerplate
 
         self.f_tag = filehandle.read(4)  # TAG: magic tag
@@ -415,7 +410,15 @@ class Vault:
 
         #self.records.sort(key=lambda r: r._group + r._title)
         self.records.sort(key=lambda r: r.for_cmp())
-        filehandle.close()
+
+    def _read_from_file(self, filename, password: bytes):
+        """
+        Initialize all class members by loading the contents of a Vault stored in the given file.
+        """
+        #filehandle = open(filename, 'rb')
+        with open(filename, 'rb') as filehandle:
+            self._read_from_stream(filehandle, password)
+        #filehandle.close()
 
     def write_to_stream(self, filehandle, password: bytes):
         _last_save = struct.pack("<L", int(time.time()))
