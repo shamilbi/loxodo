@@ -417,19 +417,11 @@ class Vault:
         self.records.sort(key=lambda r: r.for_cmp())
         filehandle.close()
 
-    def write_to_file(self, filename, password: bytes):
-        """
-        Store contents of this Vault into a file.
-        """
+    def write_to_stream(self, filehandle, password: bytes):
         _last_save = struct.pack("<L", int(time.time()))
         self.header.raw_fields[0x04] = self.Field(0x04, _last_save)
         _what_saved = "Loxodo 0.0-git".encode("utf_8", "replace")
         self.header.raw_fields[0x06] = self.Field(0x06, _what_saved)
-
-        # write to temporary file first
-        (osfilehandle, tmpfilename) = tempfile.mkstemp(
-            '.part', os.path.basename(filename) + ".", os.path.dirname(filename), text=False)
-        filehandle = os.fdopen(osfilehandle, "wb")
 
         # FIXME: choose new SALT, B1-B4, IV values on each file write? Conflicting Specs!
 
@@ -476,7 +468,19 @@ class Vault:
 
         self.f_hmac = hmac_checker.digest()
         filehandle.write(self.f_hmac)
-        filehandle.close()
+
+    def write_to_file(self, filename, password: bytes):
+        """
+        Store contents of this Vault into a file.
+        """
+
+        # write to temporary file first
+        (osfilehandle, tmpfilename) = tempfile.mkstemp(
+            '.part', os.path.basename(filename) + ".", os.path.dirname(filename), text=False)
+        #filehandle = os.fdopen(osfilehandle, "wb")
+        with open(osfilehandle, 'wb') as filehandle:
+            self.write_to_stream(filehandle, password)
+        #filehandle.close()
 
         try:
             _ = Vault(password, filename=tmpfilename)
