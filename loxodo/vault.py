@@ -22,14 +22,14 @@
 import hashlib
 import struct
 from hmac import HMAC
-import random
 import os
 import tempfile
 import time
 import uuid
+import secrets
 
-from loxodo.twofish.twofish_ecb import TwofishECB
-from loxodo.twofish.twofish_cbc import TwofishCBC
+from .twofish.twofish_ecb import TwofishECB
+from .twofish.twofish_cbc import TwofishCBC
 
 
 class Vault:
@@ -282,13 +282,7 @@ class Vault:
 
     @staticmethod
     def _urandom(count):
-        try:
-            return os.urandom(count)
-        except NotImplementedError:
-            retval = b""
-            for dummy in range(count):
-                retval += struct.pack("<B", random.randint(0, 0xFF))
-            return retval
+        return secrets.token_bytes(count)
 
     def _write_field_tlv(self, filehandle, cipher, field):
         """
