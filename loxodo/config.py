@@ -55,7 +55,7 @@ class Config:
             self.recentvaults.append(self._parser.get("base", "recentvaults" + str(num)))
 
         if self._parser.has_option("base", "alphabet"):
-            self.alphabet = int(self._parser.get("base", "alphabet"))
+            self.alphabet = self._parser.get("base", "alphabet")
 
         if self._parser.has_option("base", "pwlength"):
             self.pwlength = int(self._parser.get("base", "pwlength"))
@@ -96,6 +96,8 @@ class Config:
                 break
 
         self._parser.set("base", "pwlength", str(self.pwlength))
+        s = self.alphabet.replace('%', '%%')
+        self._parser.set("base", "alphabet", s)
         self._parser.set("base", "alphabetreduction", str(self.reduction))
         self._parser.set("base", "search_notes", str(self.search_notes))
         self._parser.set("base", "search_passwd", str(self.search_passwd))
