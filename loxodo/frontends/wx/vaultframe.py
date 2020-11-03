@@ -17,19 +17,28 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
+# pylint: disable=bad-indentation,too-many-ancestors,unused-argument,superfluous-parens
+# pylint: disable=too-many-statements,too-many-locals,too-many-branches
+
 import os
 import csv
+import binascii
+import webbrowser
 import wx
 import wx.adv
 
-from . import get_bitmap, get_icon
-from .wxlocale import _
-from ...vault import Vault
-from ...config import config
-from .recordframe import RecordFrame
-from .mergeframe import MergeFrame
-from .settings import Settings
+from loxodo.vault import Vault
+from loxodo.config import config
+from loxodo.frontends.wx.recordframe import RecordFrame
+from loxodo.frontends.wx.mergeframe import MergeFrame
+from loxodo.frontends.wx.settings import Settings
+from loxodo.frontends.wx.wxlocale import _
+from loxodo.frontends.wx import get_icon
 
+try:
+    import mintotp
+except ImportError:
+    mintotp = None
 
 class VaultFrame(wx.Frame):
     """
@@ -188,18 +197,28 @@ class VaultFrame(wx.Frame):
         self._recordmenu.Append(wx.ID_PROPERTIES, _("&Edit\tCtrl+E"))
         self.Bind(wx.EVT_MENU, self._on_edit, id=wx.ID_PROPERTIES)
         self._recordmenu.AppendSeparator()
+
         temp_id = wx.NewId()
         self._recordmenu.Append(temp_id, _("Copy &Username\tCtrl+U"))
         self.Bind(wx.EVT_MENU, self._on_copy_username, id=temp_id)
+
         temp_id = wx.NewId()
         self._recordmenu.Append(temp_id, _("Copy &Password\tCtrl+P"))
         self.Bind(wx.EVT_MENU, self._on_copy_password, id=temp_id)
+
+        if mintotp:
+            temp_id = wx.NewId()
+            self._recordmenu.Append(temp_id, _("Create &TOTP from Password\tCtrl+T"))
+            self.Bind(wx.EVT_MENU, self._on_totp, id=temp_id)
+
         temp_id = wx.NewId()
         self._recordmenu.Append(temp_id, _("Open UR&L\tCtrl+L"))
         self.Bind(wx.EVT_MENU, self._on_open_url, id=temp_id)
+
         temp_id = wx.NewId()
         self._recordmenu.Append(temp_id, _("Search &For Entry\tCtrl+F"))
         self.Bind(wx.EVT_MENU, self._on_search_for_entry, id=temp_id)
+
         menu_bar = wx.MenuBar()
         menu_bar.Append(filemenu, _("&Vault"))
         menu_bar.Append(self._recordmenu, _("&Record"))
@@ -208,8 +227,10 @@ class VaultFrame(wx.Frame):
         self.SetTitle("Loxodo - " + _("Vault Contents"))
         self.statusbar.SetStatusWidths([-1])
         statusbar_fields = [""]
-        for i in range(len(statusbar_fields)):
-            self.statusbar.SetStatusText(statusbar_fields[i], i)
+        #for i in range(len(statusbar_fields)):
+        for i, field in enumerate(statusbar_fields):
+            #self.statusbar.SetStatusText(statusbar_fields[i], i)
+            self.statusbar.SetStatusText(field, i)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         _rowsizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -401,7 +422,7 @@ if not, write to the Free Software Foundation, Inc.,
                                 _("Change Vault Password")
                                 )
         retval = dial.ShowModal()
-        password_new = dial.Value.encode('latin1', 'replace')
+        password_new = dial.GetValue().encode('latin1', 'replace')
         dial.Destroy()
         if retval != wx.ID_OK:
             return
@@ -411,7 +432,7 @@ if not, write to the Free Software Foundation, Inc.,
                                 _("Change Vault Password")
                                 )
         retval = dial.ShowModal()
-        password_new_confirm = dial.Value.encode('latin1', 'replace')
+        password_new_confirm = dial.GetValue().encode('latin1', 'replace')
         dial.Destroy()
         if retval != wx.ID_OK:
             return
@@ -458,7 +479,7 @@ if not, write to the Free Software Foundation, Inc.,
                                 _("Open Vault...")
                                 )
         retval = dial.ShowModal()
-        password = dial.Value.encode('latin1', 'replace')
+        password = dial.GetValue().encode('latin1', 'replace')
         dial.Destroy()
         if retval != wx.ID_OK:
             return
@@ -520,7 +541,7 @@ if not, write to the Free Software Foundation, Inc.,
         if retval != wx.ID_OK:
             return
 
-        for (oldrecord, newrecord, reason) in oldrecord_newrecord_reason_pairs:
+        for oldrecord, newrecord, reason in oldrecord_newrecord_reason_pairs:
             if oldrecord:
                 oldrecord.merge(newrecord)
             else:
@@ -612,6 +633,18 @@ if not, write to the Free Software Foundation, Inc.,
         except RuntimeError:
             self.statusbar.SetStatusText(_('Error copying password of "%s" to clipboard') % entry.title, 0)
 
+    def _on_totp(self, dummy):
+        if mintotp:
+            index = self.list.GetFirstSelected()
+            if (index == -1):
+                return
+            entry = self.list.displayed_entries[index]
+            try:
+                self._copy_to_clipboard(mintotp.totp(entry.passwd), duration=10)
+                self.statusbar.SetStatusText(_('Copied TOTP of "%s" to clipboard') % entry.title, 0)
+            except (RuntimeError, binascii.Error):
+                self.statusbar.SetStatusText(_('Error copying TOTP of "%s" to clipboard') % entry.title, 0)
+
     def _on_open_url(self, dummy):
         """
         Event handler: Fires when user chooses this menu item.
@@ -621,7 +654,6 @@ if not, write to the Free Software Foundation, Inc.,
             return
         entry = self.list.displayed_entries[index]
         try:
-            import webbrowser
             webbrowser.open(entry.url)
         except ImportError:
             self.statusbar.SetStatusText(_('Could not load python module "webbrowser" needed to open "%s"') % entry.url, 0)
@@ -676,4 +708,3 @@ if not, write to the Free Software Foundation, Inc.,
 
         # Ignore all other keys
         evt.Skip()
-
