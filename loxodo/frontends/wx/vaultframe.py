@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-# pylint: disable=bad-indentation,too-many-ancestors,unused-argument,superfluous-parens
+# pylint: disable=bad-indentation,too-many-ancestors,unused-argument
 # pylint: disable=too-many-statements,too-many-locals,too-many-branches
 
 import os
@@ -72,11 +72,11 @@ class VaultFrame(wx.Frame):
             if (item < 0) or (item >= len(self.displayed_entries)):
               return "--"
 
-            if (col == 0):
+            if col == 0:
                 return self.displayed_entries[item].title
-            if (col == 1):
+            if col == 1:
                 return self.displayed_entries[item].user
-            if (col == 2):
+            if col == 2:
                 return self.displayed_entries[item].group
             return "--"
 
@@ -135,7 +135,7 @@ class VaultFrame(wx.Frame):
             """
             De-selects all items
             """
-            while (self.GetFirstSelected() != -1):
+            while self.GetFirstSelected() != -1:
                 self.Select(self.GetFirstSelected(), False)
 
         def select_first(self):
@@ -143,7 +143,7 @@ class VaultFrame(wx.Frame):
             Selects and focuses the first item (if there is one)
             """
             self.deselect_all()
-            if (self.GetItemCount() > 0):
+            if self.GetItemCount() > 0:
                 self.Select(0, True)
                 self.Focus(0)
 
@@ -268,7 +268,7 @@ class VaultFrame(wx.Frame):
         Typing in the list box doesn't do anything, redirect it to the search box
         """
         keycode = key_event.GetKeyCode()
-        if not (0 < keycode < 256):
+        if not 0 < keycode < 256:
             # Arrow keys, page up, etc -- let event propagate to default handler
             key_event.Skip()
             return
@@ -358,11 +358,11 @@ class VaultFrame(wx.Frame):
         Event handler: Fires when user clicks on the list header.
         """
         col = event.GetColumn()
-        if (col == 0):
+        if col == 0:
             self.list.sort_function = lambda e1: e1.title.lower()
-        if (col == 1):
+        if col == 1:
             self.list.sort_function = lambda e1: e1.user.lower()
-        if (col == 2):
+        if col == 2:
             self.list.sort_function = lambda e1: e1.group.lower()
         self.list.update_fields()
 
@@ -559,7 +559,7 @@ if not, write to the Free Software Foundation, Inc.,
         Event handler: Fires when user chooses this menu item.
         """
         index = self.list.GetFirstSelected()
-        if (index is None):
+        if index is None:
             return
         entry = self.list.displayed_entries[index]
 
@@ -587,7 +587,7 @@ if not, write to the Free Software Foundation, Inc.,
         Event handler: Fires when user chooses this menu item.
         """
         index = self.list.GetFirstSelected()
-        if (index == -1):
+        if index == -1:
             return
         entry = self.list.displayed_entries[index]
 
@@ -610,7 +610,7 @@ if not, write to the Free Software Foundation, Inc.,
         Event handler: Fires when user chooses this menu item.
         """
         index = self.list.GetFirstSelected()
-        if (index == -1):
+        if index == -1:
             return
         entry = self.list.displayed_entries[index]
         try:
@@ -624,7 +624,7 @@ if not, write to the Free Software Foundation, Inc.,
         Event handler: Fires when user chooses this menu item.
         """
         index = self.list.GetFirstSelected()
-        if (index == -1):
+        if index == -1:
             return
         entry = self.list.displayed_entries[index]
         try:
@@ -636,7 +636,7 @@ if not, write to the Free Software Foundation, Inc.,
     def _on_totp(self, dummy):
         if mintotp:
             index = self.list.GetFirstSelected()
-            if (index == -1):
+            if index == -1:
                 return
             entry = self.list.displayed_entries[index]
             try:
@@ -650,7 +650,7 @@ if not, write to the Free Software Foundation, Inc.,
         Event handler: Fires when user chooses this menu item.
         """
         index = self.list.GetFirstSelected()
-        if (index == -1):
+        if index == -1:
             return
         entry = self.list.displayed_entries[index]
         try:
