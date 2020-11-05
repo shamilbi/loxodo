@@ -24,6 +24,8 @@ import os
 import csv
 import binascii
 import webbrowser
+from datetime import datetime
+
 import wx
 import wx.adv
 
@@ -56,9 +58,11 @@ class VaultFrame(wx.Frame):
             self.InsertColumn(0, _("Title"))
             self.InsertColumn(1, _("Username"))
             self.InsertColumn(2, _("Group"))
+            self.InsertColumn(3, _("ModTime"))
             self.SetColumnWidth(0, 256)
             self.SetColumnWidth(1, 128)
-            self.SetColumnWidth(2, 256)
+            self.SetColumnWidth(2, 180)
+            self.SetColumnWidth(3, 128)
             self.sort_function = lambda e1: e1.group.lower()
             self.update_fields()
 
@@ -72,13 +76,19 @@ class VaultFrame(wx.Frame):
             if (item < 0) or (item >= len(self.displayed_entries)):
               return "--"
 
+            s = '--'
             if col == 0:
-                return self.displayed_entries[item].title
+                s = self.displayed_entries[item].title
             if col == 1:
-                return self.displayed_entries[item].user
+                s = self.displayed_entries[item].user
             if col == 2:
-                return self.displayed_entries[item].group
-            return "--"
+                s = self.displayed_entries[item].group
+            if col == 3:
+                s = ''
+                i: int = self.displayed_entries[item].last_mod
+                if i:
+                    s = datetime.fromtimestamp(i).strftime('%Y-%m-%d %H:%M:%S')
+            return s
 
         def update_fields(self):
             """
@@ -159,7 +169,7 @@ class VaultFrame(wx.Frame):
         self._searchbox = wx.SearchCtrl(self.panel, size=(200, 30))
         # size(200, -1) --> too small height on Linux-x86_64
         self._searchbox.ShowCancelButton(True)
-        self.list = self.VaultListCtrl(self.panel, -1, size=(640, 240), style=wx.LC_REPORT|wx.SUNKEN_BORDER|wx.LC_VIRTUAL)
+        self.list = self.VaultListCtrl(self.panel, -1, size=(700, 240), style=wx.LC_REPORT|wx.SUNKEN_BORDER|wx.LC_VIRTUAL)
         self.list.Bind(wx.EVT_COMMAND_RIGHT_CLICK, self._on_list_contextmenu)
         self.list.Bind(wx.EVT_RIGHT_UP, self._on_list_contextmenu)
         self.list.Bind(wx.EVT_CHAR, self._on_list_box_char)
