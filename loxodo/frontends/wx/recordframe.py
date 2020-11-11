@@ -17,14 +17,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-import os
-import platform
-import random
-import struct
+# pylint: disable=superfluous-parens,too-many-ancestors
+
 import wx
 
-from .wxlocale import _
-from ...config import config
+from loxodo.vault import _urandom
+from loxodo.config import config
+from loxodo.frontends.wx.wxlocale import _
 
 
 class RecordFrame(wx.Dialog):
@@ -159,14 +158,14 @@ class RecordFrame(wx.Dialog):
         """
         Event handler: Fires when user chooses this button.
         """
-        self.EndModal(wx.ID_CANCEL);
+        self.EndModal(wx.ID_CANCEL)
 
     def _on_ok(self, evt):
         """
         Event handler: Fires when user chooses this button.
         """
         self._apply_changes(evt)
-        self.EndModal(wx.ID_OK);
+        self.EndModal(wx.ID_OK)
 
     def _on_toggle_passwd_mask(self, dummy):
         _tmp = self._tc_passwd
@@ -184,15 +183,15 @@ class RecordFrame(wx.Dialog):
         _pwd = self.generate_password(alphabet=config.alphabet,pwd_length=config.pwlength,allow_reduction=config.reduction)
         self._tc_passwd.SetValue(_pwd)
 
-    @staticmethod
-    def _urandom(count):
-        try:
-            return os.urandom(count)
-        except NotImplementedError:
-            retval = ""
-            for dummy in range(count):
-                retval += struct.pack("<B", random.randint(0, 0xFF))
-            return retval
+    #@staticmethod
+    #def _urandom(count):
+    #    try:
+    #        return os.urandom(count)
+    #    except NotImplementedError:
+    #        retval = ""
+    #        for dummy in range(count):
+    #            retval += struct.pack("<B", random.randint(0, 0xFF))
+    #        return retval
 
     @staticmethod
     def generate_password(alphabet="abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_", pwd_length=8, allow_reduction=False):
@@ -212,7 +211,7 @@ class RecordFrame(wx.Dialog):
                     if last_chr == _chr[0]:
                         alphabet2 = alphabet.replace(_chr[1],"")
 
-            _chr = alphabet2[int(len(alphabet2) / 256.0 * ord(RecordFrame._urandom(1)))]
+            _chr = alphabet2[int(len(alphabet2) / 256.0 * ord(_urandom(1)))]
             pwd += _chr
             last_chr = _chr
 
@@ -222,7 +221,7 @@ class RecordFrame(wx.Dialog):
         """
         Event handler: Fires when user closes the frame
         """
-        self.EndModal(wx.ID_CANCEL);
+        self.EndModal(wx.ID_CANCEL)
 
     def _on_escape(self, evt):
         """
@@ -230,7 +229,7 @@ class RecordFrame(wx.Dialog):
         """
         # If "Escape" was pressed, hide the frame
         if evt.GetKeyCode() == wx.WXK_ESCAPE:
-            self.EndModal(wx.ID_CANCEL);
+            self.EndModal(wx.ID_CANCEL)
             return
 
         # Ignore all other keys
@@ -248,4 +247,3 @@ class RecordFrame(wx.Dialog):
         return self._vault_record
 
     vault_record = property(_get_vault_record, _set_vault_record)
-

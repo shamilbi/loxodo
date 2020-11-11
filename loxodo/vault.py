@@ -246,6 +246,35 @@ class Record:
         return self._group + self._title
 
 
+def _urandom(count):
+    return secrets.token_bytes(count)
+
+
+def _write_field_tlv(filehandle, cipher, field):
+    """
+    Write one field of a vault record using the given file handle.
+    """
+    if field is None:
+        filehandle.write(b"PWS3-EOFPWS3-EOF")
+        return
+
+    assert len(field.raw_value) == field.raw_len
+
+    raw_len = struct.pack("<L", field.raw_len)
+    raw_type = struct.pack("<B", field.raw_type)
+    raw_value = field.raw_value
+
+    # Assemble TLV block and pad to 16-byte boundary
+    data = raw_len + raw_type + raw_value
+    if len(data) % 16 != 0:
+        pad_count = 16 - (len(data) % 16)
+        data += _urandom(pad_count)
+
+    data = cipher.encrypt(data)
+
+    filehandle.write(data)
+
+
 class Vault:
     """
     Represents a collection of password Records in PasswordSafe V3 format.
@@ -288,54 +317,26 @@ class Vault:
         return stretched_password
 
     @staticmethod
-    def _urandom(count):
-        return secrets.token_bytes(count)
-
-    def _write_field_tlv(self, filehandle, cipher, field):
-        """
-        Write one field of a vault record using the given file handle.
-        """
-        if field is None:
-            filehandle.write(b"PWS3-EOFPWS3-EOF")
-            return
-
-        assert len(field.raw_value) == field.raw_len
-
-        raw_len = struct.pack("<L", field.raw_len)
-        raw_type = struct.pack("<B", field.raw_type)
-        raw_value = field.raw_value
-
-        # Assemble TLV block and pad to 16-byte boundary
-        data = raw_len + raw_type + raw_value
-        if len(data) % 16 != 0:
-            pad_count = 16 - (len(data) % 16)
-            data += self._urandom(pad_count)
-
-        data = cipher.encrypt(data)
-
-        filehandle.write(data)
-
-    @staticmethod
     def create(password, filename):
         vault = Vault(password)
         vault.write_to_file(filename, password)
 
     def _create_empty(self, password: bytes):
         self.f_tag = 'PWS3'
-        self.f_salt = Vault._urandom(32)
+        self.f_salt = _urandom(32)
         self.f_iter = 2048
         stretched_password = self._stretch_password(password, self.f_salt, self.f_iter)
         self.f_sha_ps = hashlib.sha256(stretched_password).digest()
 
         cipher = TwofishECB(stretched_password)
-        self.f_b1 = cipher.encrypt(Vault._urandom(16))
-        self.f_b2 = cipher.encrypt(Vault._urandom(16))
-        self.f_b3 = cipher.encrypt(Vault._urandom(16))
-        self.f_b4 = cipher.encrypt(Vault._urandom(16))
+        self.f_b1 = cipher.encrypt(_urandom(16))
+        self.f_b2 = cipher.encrypt(_urandom(16))
+        self.f_b3 = cipher.encrypt(_urandom(16))
+        self.f_b4 = cipher.encrypt(_urandom(16))
         key_k = cipher.decrypt(self.f_b1) + cipher.decrypt(self.f_b2)
         key_l = cipher.decrypt(self.f_b3) + cipher.decrypt(self.f_b4)
 
-        self.f_iv = Vault._urandom(16)
+        self.f_iv = _urandom(16)
 
         hmac_checker = HMAC(key_l, b"", hashlib.sha256)
         cipher = TwofishCBC(key_k, self.f_iv)
@@ -456,19 +457,19 @@ class Vault:
         end_of_record = Field(0xff, b"")
 
         for field in self.header.raw_fields.values():
-            self._write_field_tlv(filehandle, cipher, field)
+            _write_field_tlv(filehandle, cipher, field)
             hmac_checker.update(field.raw_value)
-        self._write_field_tlv(filehandle, cipher, end_of_record)
+        _write_field_tlv(filehandle, cipher, end_of_record)
         hmac_checker.update(end_of_record.raw_value)
 
         for record in self.records:
             for field in record.raw_fields.values():
-                self._write_field_tlv(filehandle, cipher, field)
+                _write_field_tlv(filehandle, cipher, field)
                 hmac_checker.update(field.raw_value)
-            self._write_field_tlv(filehandle, cipher, end_of_record)
+            _write_field_tlv(filehandle, cipher, end_of_record)
             hmac_checker.update(end_of_record.raw_value)
 
-        self._write_field_tlv(filehandle, cipher, None)
+        _write_field_tlv(filehandle, cipher, None)
 
         self.f_hmac = hmac_checker.digest()
         filehandle.write(self.f_hmac)
