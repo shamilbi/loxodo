@@ -32,7 +32,7 @@ except ImportError:
     pygtk = None
     gtk = None
 
-from ...vault import Vault
+from ...vault import Vault, BadPasswordError, VaultFormatError, VaultVersionError, Record
 from ...config import config
 from ... import PY3
 
@@ -81,13 +81,13 @@ class InteractiveConsole(cmd.Cmd):
         try:
             self.vault = Vault(self.vault_password, filename=self.vault_file_name)
             self.prompt = "[" + os.path.basename(self.vault_file_name) + "]> "
-        except Vault.BadPasswordError:
+        except BadPasswordError:
             print("Bad password.")
             raise
-        except Vault.VaultVersionError:
+        except VaultVersionError:
             print("This is not a PasswordSafe V3 Vault.")
             raise
-        except Vault.VaultFormatError:
+        except VaultFormatError:
             print("Vault integrity check failed.")
             raise
         print("... Done.\n")
@@ -140,7 +140,7 @@ class InteractiveConsole(cmd.Cmd):
             return
 
         line = line.split(" ")
-        entry = self.vault.Record.create()
+        entry = Record.create()
         entry.user = line[0]
         if len(line) >= 2:
             entry.title = line[1]
@@ -173,7 +173,7 @@ class InteractiveConsole(cmd.Cmd):
         data = csv.reader(open(line, 'rb'))
         try:
             for row in data:
-                entry = self.vault.Record.create()
+                entry = Record.create()
                 entry.title = row[0]
                 entry.user = row[1]
                 entry.passwd = row[2]

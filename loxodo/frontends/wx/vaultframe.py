@@ -29,7 +29,7 @@ from datetime import datetime
 import wx
 import wx.adv
 
-from loxodo.vault import Vault
+from loxodo.vault import Vault, BadPasswordError, VaultFormatError, VaultVersionError, Record
 from loxodo.config import config
 from loxodo.frontends.wx.recordframe import RecordFrame
 from loxodo.frontends.wx.mergeframe import MergeFrame
@@ -497,7 +497,7 @@ if not, write to the Free Software Foundation, Inc.,
         merge_vault = None
         try:
             merge_vault = Vault(password, filename=filename)
-        except Vault.BadPasswordError:
+        except BadPasswordError:
             dial = wx.MessageDialog(self,
                                     _('The given password does not match the Vault'),
                                     _('Bad Password'),
@@ -506,7 +506,7 @@ if not, write to the Free Software Foundation, Inc.,
             dial.ShowModal()
             dial.Destroy()
             return
-        except Vault.VaultVersionError:
+        except VaultVersionError:
             dial = wx.MessageDialog(self,
                                     _('This is not a PasswordSafe V3 Vault'),
                                     _('Bad Vault'),
@@ -515,7 +515,7 @@ if not, write to the Free Software Foundation, Inc.,
             dial.ShowModal()
             dial.Destroy()
             return
-        except Vault.VaultFormatError:
+        except VaultFormatError:
             dial = wx.MessageDialog(self,
                                     _('Vault integrity check failed'),
                                     _('Bad Vault'),
@@ -583,7 +583,7 @@ if not, write to the Free Software Foundation, Inc.,
         """
         Event handler: Fires when user chooses this menu item.
         """
-        entry = self.vault.Record.create()
+        entry = Record.create()
 
         recordframe = RecordFrame(self)
         recordframe.vault_record = entry

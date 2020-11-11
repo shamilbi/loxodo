@@ -32,6 +32,220 @@ from loxodo.twofish.twofish_ecb import TwofishECB
 from loxodo.twofish.twofish_cbc import TwofishCBC
 
 
+class BadPasswordError(RuntimeError):
+    pass
+
+
+class VaultFormatError(RuntimeError):
+    pass
+
+
+class VaultVersionError(VaultFormatError):
+    pass
+
+
+class Field:
+    """
+    Contains the raw, on-disk representation of a record's field.
+    """
+    def __init__(self, raw_type, raw_value):
+        self.raw_type = raw_type
+        self.raw_value = raw_value
+        self.raw_len = len(raw_value)
+
+
+class Header:
+    """
+    Contains the fields of a Vault header.
+    """
+    def __init__(self):
+        self.raw_fields = {}
+
+    def add_raw_field(self, raw_field):
+        self.raw_fields[raw_field.raw_type] = raw_field
+
+
+def _read_field_tlv(filehandle, cipher):
+    """
+    Return one field of a vault record by reading from the given file handle.
+    """
+    data = filehandle.read(16)
+    if not data or len(data) < 16:
+        raise VaultFormatError("EOF encountered when parsing record field")
+    if data == b"PWS3-EOFPWS3-EOF":
+        return None
+    data = cipher.decrypt(data)
+    raw_len = struct.unpack("<L", data[0:4])[0]
+    raw_type = struct.unpack("<B", bytes([data[4]]))[0]
+    #   data = [int]
+    raw_value = data[5:]
+    if raw_len > 11:
+        for _ in range((raw_len+4)//16):
+            data = filehandle.read(16)
+            if not data or len(data) < 16:
+                raise VaultFormatError("EOF encountered when parsing record field")
+            raw_value += cipher.decrypt(data)
+    raw_value = raw_value[:raw_len]
+    return Field(raw_type, raw_value)
+
+
+class Record:
+    """
+    Contains the fields of an individual password record.
+    """
+    def __init__(self):
+        self.raw_fields = {}
+        self._uuid = None
+        self._group: str = ""
+        self._title: str = ""
+        self._user = ""
+        self._notes = ""
+        self._passwd = ""
+        self._last_mod: int = 0
+        self._url = ""
+
+    @staticmethod
+    def create():
+        record = Record()
+        record.uuid = uuid.uuid4()
+        record.last_mod = int(time.time())
+        return record
+
+    def add_raw_field(self, raw_field):
+        self.raw_fields[raw_field.raw_type] = raw_field
+        if raw_field.raw_type == 0x01:
+            self._uuid = uuid.UUID(bytes_le=raw_field.raw_value)
+        if raw_field.raw_type == 0x02:
+            self._group = raw_field.raw_value.decode('utf_8', 'replace')
+        if raw_field.raw_type == 0x03:
+            self._title = raw_field.raw_value.decode('utf_8', 'replace')
+        if raw_field.raw_type == 0x04:
+            self._user = raw_field.raw_value.decode('utf_8', 'replace')
+        if raw_field.raw_type == 0x05:
+            self._notes = raw_field.raw_value.decode('utf_8', 'replace')
+        if raw_field.raw_type == 0x06:
+            self._passwd = raw_field.raw_value.decode('utf_8', 'replace')
+        if raw_field.raw_type == 0x0c and raw_field.raw_len == 4:
+            self._last_mod = struct.unpack("<L", raw_field.raw_value)[0]
+        if raw_field.raw_type == 0x0d:
+            self._url = raw_field.raw_value.decode('utf_8', 'replace')
+
+    def mark_modified(self):
+        self.last_mod = int(time.time())
+
+    @property
+    def uuid(self):
+        return self._uuid
+
+    @uuid.setter
+    def uuid(self, value):
+        self._uuid = value
+        raw_id = 0x01
+        self.raw_fields[raw_id] = Field(raw_id, value.bytes_le)
+        self.mark_modified()
+
+    @property
+    def group(self):
+        return self._group
+
+    @group.setter
+    def group(self, value):
+        self._group = value
+        raw_id = 0x02
+        self.raw_fields[raw_id] = Field(raw_id, value.encode('utf_8', 'replace'))
+        self.mark_modified()
+
+    @property
+    def title(self):
+        return self._title
+
+    @title.setter
+    def title(self, value):
+        self._title = value
+        raw_id = 0x03
+        self.raw_fields[raw_id] = Field(raw_id, value.encode('utf_8', 'replace'))
+        self.mark_modified()
+
+    @property
+    def user(self):
+        return self._user
+
+    @user.setter
+    def user(self, value):
+        self._user = value
+        raw_id = 0x04
+        self.raw_fields[raw_id] = Field(raw_id, value.encode('utf_8', 'replace'))
+        self.mark_modified()
+
+    @property
+    def notes(self):
+        return self._notes
+
+    @notes.setter
+    def notes(self, value):
+        self._notes = value
+        raw_id = 0x05
+        self.raw_fields[raw_id] = Field(raw_id, value.encode('utf_8', 'replace'))
+        self.mark_modified()
+
+    @property
+    def passwd(self):
+        return self._passwd
+
+    @passwd.setter
+    def passwd(self, value):
+        self._passwd = value
+        raw_id = 0x06
+        self.raw_fields[raw_id] = Field(raw_id, value.encode('utf_8', 'replace'))
+        self.mark_modified()
+
+    @property
+    def last_mod(self) -> int:
+        return self._last_mod
+
+    @last_mod.setter
+    def last_mod(self, value: int):
+        self._last_mod = value
+        raw_id = 0x0c
+        self.raw_fields[raw_id] = Field(raw_id, struct.pack("<L", value))
+
+    @property
+    def url(self):
+        return self._url
+
+    @url.setter
+    def url(self, value):
+        self._url = value
+        raw_id = 0x0d
+        self.raw_fields[raw_id] = Field(raw_id, value.encode('utf_8', 'replace'))
+        self.mark_modified()
+
+    def is_corresponding(self, record):
+        """
+        Return True if Records are the same, based on either UUIDs (if available) or title
+        """
+        if not self.uuid or not record.uuid:
+            return self.title == record.title
+        return self.uuid == record.uuid
+
+    def is_newer_than(self, record):
+        """
+        Return True if this Record's last modifed date is later than the given one's.
+        """
+        return self.last_mod > record.last_mod
+
+    def merge(self, record):
+        """
+        Merge in fields from another Record, replacing existing ones
+        """
+        self.raw_fields = {}
+        for field in record.raw_fields.values():
+            self.add_raw_field(field)
+
+    def for_cmp(self):
+        return self._group + self._title
+
+
 class Vault:
     """
     Represents a collection of password Records in PasswordSafe V3 format.
@@ -50,196 +264,12 @@ class Vault:
         self.f_b4 = None
         self.f_iv = None
         self.f_hmac = None
-        self.header = self.Header()
+        self.header = Header()
         self.records = []
         if not filename:
             self._create_empty(password)
         else:
             self._read_from_file(filename, password)
-
-    class BadPasswordError(RuntimeError):
-        pass
-
-    class VaultFormatError(RuntimeError):
-        pass
-
-    class VaultVersionError(VaultFormatError):
-        pass
-
-    class Field:
-        """
-        Contains the raw, on-disk representation of a record's field.
-        """
-        def __init__(self, raw_type, raw_value):
-            self.raw_type = raw_type
-            self.raw_value = raw_value
-            self.raw_len = len(raw_value)
-
-    class Header:
-        """
-        Contains the fields of a Vault header.
-        """
-        def __init__(self):
-            self.raw_fields = {}
-
-        def add_raw_field(self, raw_field):
-            self.raw_fields[raw_field.raw_type] = raw_field
-
-    class Record:
-        """
-        Contains the fields of an individual password record.
-        """
-        def __init__(self):
-            self.raw_fields = {}
-            self._uuid = None
-            self._group: str = ""
-            self._title: str = ""
-            self._user = ""
-            self._notes = ""
-            self._passwd = ""
-            self._last_mod: int = 0
-            self._url = ""
-
-        @staticmethod
-        def create():
-            record = Vault.Record()
-            record.uuid = uuid.uuid4()
-            record.last_mod = int(time.time())
-            return record
-
-        def add_raw_field(self, raw_field):
-            self.raw_fields[raw_field.raw_type] = raw_field
-            if raw_field.raw_type == 0x01:
-                self._uuid = uuid.UUID(bytes_le=raw_field.raw_value)
-            if raw_field.raw_type == 0x02:
-                self._group = raw_field.raw_value.decode('utf_8', 'replace')
-            if raw_field.raw_type == 0x03:
-                self._title = raw_field.raw_value.decode('utf_8', 'replace')
-            if raw_field.raw_type == 0x04:
-                self._user = raw_field.raw_value.decode('utf_8', 'replace')
-            if raw_field.raw_type == 0x05:
-                self._notes = raw_field.raw_value.decode('utf_8', 'replace')
-            if raw_field.raw_type == 0x06:
-                self._passwd = raw_field.raw_value.decode('utf_8', 'replace')
-            if raw_field.raw_type == 0x0c and raw_field.raw_len == 4:
-                self._last_mod = struct.unpack("<L", raw_field.raw_value)[0]
-            if raw_field.raw_type == 0x0d:
-                self._url = raw_field.raw_value.decode('utf_8', 'replace')
-
-        def mark_modified(self):
-            self.last_mod = int(time.time())
-
-        @property
-        def uuid(self):
-            return self._uuid
-
-        @uuid.setter
-        def uuid(self, value):
-            self._uuid = value
-            raw_id = 0x01
-            self.raw_fields[raw_id] = Vault.Field(raw_id, value.bytes_le)
-            self.mark_modified()
-
-        @property
-        def group(self):
-            return self._group
-
-        @group.setter
-        def group(self, value):
-            self._group = value
-            raw_id = 0x02
-            self.raw_fields[raw_id] = Vault.Field(raw_id, value.encode('utf_8', 'replace'))
-            self.mark_modified()
-
-        @property
-        def title(self):
-            return self._title
-
-        @title.setter
-        def title(self, value):
-            self._title = value
-            raw_id = 0x03
-            self.raw_fields[raw_id] = Vault.Field(raw_id, value.encode('utf_8', 'replace'))
-            self.mark_modified()
-
-        @property
-        def user(self):
-            return self._user
-
-        @user.setter
-        def user(self, value):
-            self._user = value
-            raw_id = 0x04
-            self.raw_fields[raw_id] = Vault.Field(raw_id, value.encode('utf_8', 'replace'))
-            self.mark_modified()
-
-        @property
-        def notes(self):
-            return self._notes
-
-        @notes.setter
-        def notes(self, value):
-            self._notes = value
-            raw_id = 0x05
-            self.raw_fields[raw_id] = Vault.Field(raw_id, value.encode('utf_8', 'replace'))
-            self.mark_modified()
-
-        @property
-        def passwd(self):
-            return self._passwd
-
-        @passwd.setter
-        def passwd(self, value):
-            self._passwd = value
-            raw_id = 0x06
-            self.raw_fields[raw_id] = Vault.Field(raw_id, value.encode('utf_8', 'replace'))
-            self.mark_modified()
-
-        @property
-        def last_mod(self) -> int:
-            return self._last_mod
-
-        @last_mod.setter
-        def last_mod(self, value: int):
-            self._last_mod = value
-            raw_id = 0x0c
-            self.raw_fields[raw_id] = Vault.Field(raw_id, struct.pack("<L", value))
-
-        @property
-        def url(self):
-            return self._url
-
-        @url.setter
-        def url(self, value):
-            self._url = value
-            raw_id = 0x0d
-            self.raw_fields[raw_id] = Vault.Field(raw_id, value.encode('utf_8', 'replace'))
-            self.mark_modified()
-
-        def is_corresponding(self, record):
-            """
-            Return True if Records are the same, based on either UUIDs (if available) or title
-            """
-            if not self.uuid or not record.uuid:
-                return self.title == record.title
-            return self.uuid == record.uuid
-
-        def is_newer_than(self, record):
-            """
-            Return True if this Record's last modifed date is later than the given one's.
-            """
-            return self.last_mod > record.last_mod
-
-        def merge(self, record):
-            """
-            Merge in fields from another Record, replacing existing ones
-            """
-            self.raw_fields = {}
-            for field in record.raw_fields.values():
-                self.add_raw_field(field)
-
-        def for_cmp(self):
-            return self._group + self._title
 
     @staticmethod
     def _stretch_password(password, salt, iterations):
@@ -256,29 +286,6 @@ class Vault:
         for dummy in range(iterations):
             stretched_password = hashlib.sha256(stretched_password).digest()
         return stretched_password
-
-    def _read_field_tlv(self, filehandle, cipher):
-        """
-        Return one field of a vault record by reading from the given file handle.
-        """
-        data = filehandle.read(16)
-        if not data or len(data) < 16:
-            raise self.VaultFormatError("EOF encountered when parsing record field")
-        if data == b"PWS3-EOFPWS3-EOF":
-            return None
-        data = cipher.decrypt(data)
-        raw_len = struct.unpack("<L", data[0:4])[0]
-        raw_type = struct.unpack("<B", bytes([data[4]]))[0]
-        #   data = [int]
-        raw_value = data[5:]
-        if raw_len > 11:
-            for _ in range((raw_len+4)//16):
-                data = filehandle.read(16)
-                if not data or len(data) < 16:
-                    raise self.VaultFormatError("EOF encountered when parsing record field")
-                raw_value += cipher.decrypt(data)
-        raw_value = raw_value[:raw_len]
-        return self.Field(raw_type, raw_value)
 
     @staticmethod
     def _urandom(count):
@@ -342,7 +349,7 @@ class Vault:
 
         self.f_tag = filehandle.read(4)  # TAG: magic tag
         if self.f_tag != b'PWS3':
-            raise self.VaultVersionError("Not a PasswordSafe V3 file")
+            raise VaultVersionError("Not a PasswordSafe V3 file")
 
         self.f_salt = filehandle.read(32)  # SALT: SHA-256 salt
         self.f_iter = struct.unpack("<L", filehandle.read(4))[0]
@@ -353,7 +360,7 @@ class Vault:
 
         self.f_sha_ps = filehandle.read(32) # H(P'): SHA-256 hash of stretched passphrase
         if self.f_sha_ps != my_sha_ps:
-            raise self.BadPasswordError("Wrong password")
+            raise BadPasswordError("Wrong password")
 
         self.f_b1 = filehandle.read(16)  # B1
         self.f_b2 = filehandle.read(16)  # B2
@@ -372,7 +379,7 @@ class Vault:
         # read header
 
         while True:
-            field = self._read_field_tlv(filehandle, cipher)
+            field = _read_field_tlv(filehandle, cipher)
             if not field:
                 break
             if field.raw_type == 0xff:
@@ -382,14 +389,14 @@ class Vault:
 
         # read fields
 
-        current_record = self.Record()
+        current_record = Record()
         while True:
-            field = self._read_field_tlv(filehandle, cipher)
+            field = _read_field_tlv(filehandle, cipher)
             if not field:
                 break
             if field.raw_type == 0xff:
                 self.records.append(current_record)
-                current_record = self.Record()
+                current_record = Record()
             else:
                 hmac_checker.update(field.raw_value)
                 current_record.add_raw_field(field)
@@ -400,7 +407,7 @@ class Vault:
 
         my_hmac = hmac_checker.digest()
         if self.f_hmac != my_hmac:
-            raise self.VaultFormatError("File integrity check failed")
+            raise VaultFormatError("File integrity check failed")
 
         #self.records.sort(key=lambda r: r._group + r._title)
         self.records.sort(key=lambda r: r.for_cmp())
@@ -416,9 +423,9 @@ class Vault:
 
     def write_to_stream(self, filehandle, password: bytes):
         _last_save = struct.pack("<L", int(time.time()))
-        self.header.raw_fields[0x04] = self.Field(0x04, _last_save)
+        self.header.raw_fields[0x04] = Field(0x04, _last_save)
         _what_saved = "Loxodo 0.0-git".encode("utf_8", "replace")
-        self.header.raw_fields[0x06] = self.Field(0x06, _what_saved)
+        self.header.raw_fields[0x06] = Field(0x06, _what_saved)
 
         # FIXME: choose new SALT, B1-B4, IV values on each file write? Conflicting Specs!
 
@@ -446,7 +453,7 @@ class Vault:
         hmac_checker = HMAC(key_l, b"", hashlib.sha256)
         cipher = TwofishCBC(key_k, self.f_iv)
 
-        end_of_record = self.Field(0xff, b"")
+        end_of_record = Field(0xff, b"")
 
         for field in self.header.raw_fields.values():
             self._write_field_tlv(filehandle, cipher, field)
@@ -483,7 +490,7 @@ class Vault:
             _ = Vault(password, filename=tmpfilename)
         except RuntimeError as e:
             os.remove(tmpfilename)
-            raise self.VaultFormatError("File integrity check failed") from e
+            raise VaultFormatError("File integrity check failed") from e
 
         # after writing the temporary file, replace the original file with it
         try:

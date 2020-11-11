@@ -17,14 +17,16 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
+# pylint: disable=too-many-ancestors
+
 import wx
 from wx.lib import filebrowsebutton
 
-from .wxlocale import _
-from .vaultframe import VaultFrame
-from ...vault import Vault
-from ...config import config
-from . import get_bitmap, get_icon
+from loxodo.vault import Vault, BadPasswordError, VaultFormatError, VaultVersionError
+from loxodo.config import config
+from loxodo.frontends.wx.wxlocale import _
+from loxodo.frontends.wx.vaultframe import VaultFrame
+from loxodo.frontends.wx import get_bitmap, get_icon
 
 
 class LoadFrame(wx.Frame):
@@ -41,7 +43,7 @@ class LoadFrame(wx.Frame):
         self.bitmap_1 = wx.StaticBitmap(self.panel_1, -1, get_bitmap('loxodo-icon.png'))
         self.SetIcon(get_icon('loxodo-icon.png', 128, 128))
         self._fb_filename = filebrowsebutton.FileBrowseButtonWithHistory(self.panel_1, -1, size=(450, -1),  changeCallback = self._on_pickvault, labelText = _("Vault") + ":")
-        if (config.recentvaults):
+        if config.recentvaults:
             self._fb_filename.SetHistory(config.recentvaults, 0)
         self.static_line_1 = wx.StaticLine(self.panel_1, -1)
 
@@ -116,7 +118,7 @@ class LoadFrame(wx.Frame):
             self.Hide()
             vaultframe.Show()
             self.Destroy()
-        except Vault.BadPasswordError:
+        except BadPasswordError:
             vaultframe.Destroy()
             dial = wx.MessageDialog(self,
                                     _('The given password does not match the Vault'),
@@ -127,7 +129,7 @@ class LoadFrame(wx.Frame):
             dial.Destroy()
             self._tc_passwd.SetFocus()
             self._tc_passwd.SelectAll()
-        except Vault.VaultVersionError:
+        except VaultVersionError:
             vaultframe.Destroy()
             dial = wx.MessageDialog(self,
                                     _('This is not a PasswordSafe V3 Vault'),
@@ -136,7 +138,7 @@ class LoadFrame(wx.Frame):
                                     )
             dial.ShowModal()
             dial.Destroy()
-        except Vault.VaultFormatError:
+        except VaultFormatError:
             vaultframe.Destroy()
             dial = wx.MessageDialog(self,
                                     _('Vault integrity check failed'),
@@ -145,4 +147,3 @@ class LoadFrame(wx.Frame):
                                     )
             dial.ShowModal()
             dial.Destroy()
-
