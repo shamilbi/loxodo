@@ -28,8 +28,8 @@ import time
 import uuid
 import secrets
 
-from .twofish.twofish_ecb import TwofishECB
-from .twofish.twofish_cbc import TwofishCBC
+from loxodo.twofish.twofish_ecb import TwofishECB
+from loxodo.twofish.twofish_cbc import TwofishCBC
 
 
 class Vault:
@@ -481,9 +481,9 @@ class Vault:
 
         try:
             _ = Vault(password, filename=tmpfilename)
-        except RuntimeError:
+        except RuntimeError as e:
             os.remove(tmpfilename)
-            raise self.VaultFormatError("File integrity check failed")
+            raise self.VaultFormatError("File integrity check failed") from e
 
         # after writing the temporary file, replace the original file with it
         try:
