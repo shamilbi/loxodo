@@ -65,7 +65,7 @@ class Header:
         self.raw_fields[raw_field.raw_type] = raw_field
 
 
-def _read_field_tlv(filehandle, cipher):
+def _read_field_tlv(filehandle, cipher) -> Field:
     """
     Return one field of a vault record by reading from the given file handle.
     """
@@ -275,6 +275,22 @@ def _write_field_tlv(filehandle, cipher, field):
     filehandle.write(data)
 
 
+def _stretch_password(password, salt, iterations):
+    """
+    Generate the SHA-256 value of a password after several rounds of stretching.
+
+    The algorithm is described in the following paper:
+    [KEYSTRETCH Section 4.1] http://www.schneier.com/paper-low-entropy.pdf
+    """
+    sha = hashlib.sha256()
+    sha.update(password)
+    sha.update(salt)
+    stretched_password = sha.digest()
+    for dummy in range(iterations):
+        stretched_password = hashlib.sha256(stretched_password).digest()
+    return stretched_password
+
+
 class Vault:
     """
     Represents a collection of password Records in PasswordSafe V3 format.
@@ -301,22 +317,6 @@ class Vault:
             self._read_from_file(filename, password)
 
     @staticmethod
-    def _stretch_password(password, salt, iterations):
-        """
-        Generate the SHA-256 value of a password after several rounds of stretching.
-
-        The algorithm is described in the following paper:
-        [KEYSTRETCH Section 4.1] http://www.schneier.com/paper-low-entropy.pdf
-        """
-        sha = hashlib.sha256()
-        sha.update(password)
-        sha.update(salt)
-        stretched_password = sha.digest()
-        for dummy in range(iterations):
-            stretched_password = hashlib.sha256(stretched_password).digest()
-        return stretched_password
-
-    @staticmethod
     def create(password, filename):
         vault = Vault(password)
         vault.write_to_file(filename, password)
@@ -325,7 +325,7 @@ class Vault:
         self.f_tag = 'PWS3'
         self.f_salt = _urandom(32)
         self.f_iter = 2048
-        stretched_password = self._stretch_password(password, self.f_salt, self.f_iter)
+        stretched_password = _stretch_password(password, self.f_salt, self.f_iter)
         self.f_sha_ps = hashlib.sha256(stretched_password).digest()
 
         cipher = TwofishECB(stretched_password)
@@ -355,7 +355,7 @@ class Vault:
         self.f_salt = filehandle.read(32)  # SALT: SHA-256 salt
         self.f_iter = struct.unpack("<L", filehandle.read(4))[0]
         #   ITER: SHA-256 keystretch iterations
-        stretched_password = self._stretch_password(password, self.f_salt, self.f_iter)
+        stretched_password = _stretch_password(password, self.f_salt, self.f_iter)
         #   P': the stretched key
         my_sha_ps = hashlib.sha256(stretched_password).digest()
 
@@ -436,7 +436,7 @@ class Vault:
         filehandle.write(self.f_salt)
         filehandle.write(struct.pack("<L", self.f_iter))
 
-        stretched_password = self._stretch_password(password, self.f_salt, self.f_iter)
+        stretched_password = _stretch_password(password, self.f_salt, self.f_iter)
         self.f_sha_ps = hashlib.sha256(stretched_password).digest()
         filehandle.write(self.f_sha_ps)
 
