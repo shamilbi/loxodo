@@ -17,14 +17,16 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
+# pylint: disable=unused-argument,line-too-long,no-self-use
+
 import os
 import sys
-from optparse import OptionParser
 from getpass import getpass
 import readline
 import cmd
 import re
 import csv
+
 try:
     import pygtk
     import gtk
@@ -32,9 +34,15 @@ except ImportError:
     pygtk = None
     gtk = None
 
-from ...vault import Vault, BadPasswordError, VaultFormatError, VaultVersionError, Record
-from ...config import config
-from ... import PY3
+from loxodo.vault import (
+    Vault,
+    BadPasswordError,
+    VaultFormatError,
+    VaultVersionError,
+    Record,
+)
+from loxodo.config import config
+from loxodo import PY3
 
 
 def print_arr(*args):
@@ -55,7 +63,6 @@ def print_s(s, *args):
 
 
 class InteractiveConsole(cmd.Cmd):
-
     def __init__(self):
         self.vault = None
         self.vault_file_name = None
@@ -75,9 +82,9 @@ class InteractiveConsole(cmd.Cmd):
             if not isinstance(self.vault_password, bytes):
                 # PY3
                 self.vault_password = self.vault_password.encode('utf-8')
-        except EOFError:
+        except EOFError as e:
             print("\n\nBye.")
-            raise RuntimeError("No password given")
+            raise RuntimeError("No password given") from e
         try:
             self.vault = Vault(self.vault_password, filename=self.vault_file_name)
             self.prompt = "[" + os.path.basename(self.vault_file_name) + "]> "
@@ -93,22 +100,10 @@ class InteractiveConsole(cmd.Cmd):
         print("... Done.\n")
 
     def postloop(self):
-        print
+        print()
 
     def emptyline(self):
         pass
-
-    def do_help(self, line):
-        """
-        Displays this message.
-        """
-        if line:
-            cmd.Cmd.do_help(self, line)
-            return
-
-        print("\nCommands:")
-        print("  ".join(("ls", "show", "quit", "add", "save", "import")))
-        print
 
     def do_quit(self, line):
         """
@@ -118,6 +113,7 @@ class InteractiveConsole(cmd.Cmd):
         return True
 
     def do_save(self, line=None):
+        'Save the vault'
         if self.vault_modified and self.vault_file_name and self.vault_password:
             self.vault.write_to_file(self.vault_file_name, self.vault_password)
             self.vault_modified = False
@@ -197,7 +193,7 @@ class InteractiveConsole(cmd.Cmd):
             vault_records = self.find_titles(line)
         else:
             vault_records = self.vault.records[:]
-            vault_records.sort(lambda e1, e2: cmp(e1.title, e2.title))
+            vault_records.sort(key=lambda e1: e1.title)
 
         if vault_records is None:
             print("No matches found.")
@@ -222,25 +218,38 @@ class InteractiveConsole(cmd.Cmd):
 
         for record in matches:
             if echo is True:
-                print_s("""
+                print_s(
+                    """
 %s.%s
 Username : %s
-Password : %s""", record.group, record.title, record.user, record.passwd)
+Password : %s""",
+                    record.group,
+                    record.title,
+                    record.user,
+                    record.passwd,
+                )
             else:
-                print_s("""
+                print_s(
+                    """
 %s.%s
-Username : %s""", record.group, record.title, record.user)
+Username : %s""",
+                    record.group,
+                    record.title,
+                    record.user,
+                )
 
             if record.notes.strip():
-                print_arr("Notes    :\n\t :", record.notes.replace("\n", "\n\t : "), "\n")
+                print_arr(
+                    "Notes    :\n\t :", record.notes.replace("\n", "\n\t : "), "\n"
+                )
 
             print("")
 
             if pygtk is not None and gtk is not None:
                 cb = gtk.clipboard_get()
                 if cb is not None:
-                  cb.set_text(record.passwd)
-                  cb.store()
+                    cb.set_text(record.passwd)
+                    cb.store()
 
     def complete_show(self, text, line, begidx, endidx):
         if not text:
@@ -249,11 +258,19 @@ Username : %s""", record.group, record.title, record.user)
             fulltext = line[5:]
             lastspace = fulltext.rfind(' ')
             if lastspace == -1:
-                completions = [record.title for record in self.vault.records if record.title.upper().startswith(text.upper())]
+                completions = [
+                    record.title
+                    for record in self.vault.records
+                    if record.title.upper().startswith(text.upper())
+                ]
             else:
-                completions = [record.title[lastspace+1:] for record in self.vault.records if record.title.upper().startswith(fulltext.upper())]
+                completions = [
+                    record.title[lastspace + 1 :]
+                    for record in self.vault.records
+                    if record.title.upper().startswith(fulltext.upper())
+                ]
 
-        completions.sort(lambda e1, e2: cmp(e1.title, e2.title))
+        completions.sort(key=lambda e1: e1.title)
         return completions
 
     def find_titles(self, regexp):
@@ -267,51 +284,33 @@ Username : %s""", record.group, record.title, record.user)
                 matches.append(record)
             elif pat.match(record.group) is not None:
                 matches.append(record)
-            elif pat.match(record.group+"."+record.title+" ["+record.user+"]") is not None:
+            elif (
+                pat.match(record.group + "." + record.title + " [" + record.user + "]")
+                is not None
+            ):
                 matches.append(record)
 
         if len(matches) == 0:
             return None
-        else:
-            return matches
+        return matches
 
 
-def main(argv):
-    # Options
-    usage = "usage: %prog [options] [Vault.psafe3]"
-    parser = OptionParser(usage=usage)
-    parser.add_option("-l", "--ls", dest="do_ls", default=False, action="store_true", help="list contents of vault")
-    parser.add_option("-s", "--show", dest="do_show", default=None, action="store", type="string", help="show entries matching REGEX", metavar="REGEX")
-    parser.add_option("-i", "--interactive", dest="interactive", default=False, action="store_true", help="use command line interface")
-    parser.add_option("-p", "--password", dest="passwd", default=False, action="store_true", help="Auto adds password to clipboard. (GTK Only)")
-    parser.add_option("-e", "--echo", dest="echo", default=False, action="store_true", help="Causes password to be displayed on the screen")
-    (options, args) = parser.parse_args()
-
+def main():
+    args = sys.argv[1:]
     interactiveConsole = InteractiveConsole()
 
-    if (len(args) < 1):
-        if (config.recentvaults):
+    if len(args) < 1:
+        if config.recentvaults:
             interactiveConsole.vault_file_name = config.recentvaults[0]
             print("No Vault specified, using " + interactiveConsole.vault_file_name)
         else:
             print("No Vault specified, and none found in config.")
             sys.exit(2)
-    elif (len(args) > 1):
+    elif len(args) > 1:
         print("More than one Vault specified")
         sys.exit(2)
     else:
         interactiveConsole.vault_file_name = args[0]
 
     interactiveConsole.open_vault()
-    if options.do_ls:
-        interactiveConsole.do_ls("")
-    elif options.do_show:
-        interactiveConsole.do_show(options.do_show, options.echo, options.passwd)
-    else:
-        interactiveConsole.cmdloop()
-
-    sys.exit(0)
-
-
-main(sys.argv[1:])
-
+    interactiveConsole.cmdloop()

@@ -20,8 +20,6 @@
 #
 
 import sys
-import platform
-
 from loxodo.config import config
 
 # store base script name, taking special care if we're "frozen" using py2app or py2exe
@@ -31,11 +29,16 @@ else:
     config.set_basescript(__file__)
 
 
+def do_cli():
+    from loxodo.frontends import cli
+    cli.main()
+
+
 def main():
     # If cmdline arguments were given, use the "cmdline" frontend.
     if len(sys.argv) > 1:
-        from loxodo.frontends import cli
-        sys.exit()
+        do_cli()
+        return
 
     # In all other cases, use the "wx" frontend.
     try:
@@ -45,14 +48,14 @@ def main():
         print('Found incompatible wxPython, the wxWidgets Python bindings: %s' % wx.__version__, file=sys.stderr)
         print('Falling back to cmdline frontend.', file=sys.stderr)
         print('', file=sys.stderr)
-        from loxodo.frontends.cmdline import loxodo
-        sys.exit()
+        do_cli()
+        return
     except ImportError as e:
         print('Could not find wxPython, the wxWidgets Python bindings: %s' % e, file=sys.stderr)
         print('Falling back to cmdline frontend.', file=sys.stderr)
         print('', file=sys.stderr)
-        from loxodo.frontends.cmdline import loxodo
-        sys.exit()
+        do_cli()
+        return
 
     from loxodo.frontends.wx import loxodo
 
