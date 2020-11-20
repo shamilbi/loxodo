@@ -70,7 +70,6 @@ else:
                 'loxodo = loxodo.__main__:main']},
         packages = ['loxodo',
                     'loxodo.frontends',
-                    'loxodo.frontends.cmdline',
                     'loxodo.frontends.wx',
                     'loxodo.twofish'],
         package_data = {
