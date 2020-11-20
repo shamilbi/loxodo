@@ -34,7 +34,7 @@ else:
 def main():
     # If cmdline arguments were given, use the "cmdline" frontend.
     if len(sys.argv) > 1:
-        from loxodo.frontends.cmdline import loxodo
+        from loxodo.frontends import cli
         sys.exit()
 
     # In all other cases, use the "wx" frontend.
