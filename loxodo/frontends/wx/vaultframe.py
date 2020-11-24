@@ -19,6 +19,7 @@
 
 # pylint: disable=bad-indentation,too-many-ancestors,unused-argument
 # pylint: disable=too-many-statements,too-many-locals,too-many-branches
+# pylint: disable=line-too-long
 
 import os
 import csv
@@ -29,7 +30,8 @@ from datetime import datetime
 import wx
 import wx.adv
 
-from loxodo.vault import Vault, BadPasswordError, VaultFormatError, VaultVersionError, Record
+from loxodo.vault import (
+    Vault, BadPasswordError, VaultFormatError, VaultVersionError, Record, duplicate_record)
 from loxodo.config import config
 from loxodo.frontends.wx.recordframe import RecordFrame
 from loxodo.frontends.wx.mergeframe import MergeFrame
@@ -198,9 +200,12 @@ class VaultFrame(wx.Frame):
         filemenu.AppendSeparator()
         filemenu.Append(wx.ID_EXIT, _("E&xit"))
         self.Bind(wx.EVT_MENU, self._on_exit, id=wx.ID_EXIT)
+
         self._recordmenu = wx.Menu()
         self._recordmenu.Append(wx.ID_ADD, _("&Add\tCtrl+Shift+A"))
         self.Bind(wx.EVT_MENU, self._on_add, id=wx.ID_ADD)
+        self._recordmenu.Append(wx.ID_DUPLICATE, _("&Duplicate\tCtrl+D"))
+        self.Bind(wx.EVT_MENU, self._on_add_duplicate, id=wx.ID_DUPLICATE)
         self._recordmenu.Append(wx.ID_DELETE, _("&Delete\tCtrl+Del"))
         self.Bind(wx.EVT_MENU, self._on_delete, id=wx.ID_DELETE)
         self._recordmenu.AppendSeparator()
@@ -591,6 +596,19 @@ if not, write to the Free Software Foundation, Inc.,
             self.vault.records.append(entry)
             self.mark_modified()
         recordframe.Destroy()
+
+    def _on_add_duplicate(self, dummy):
+        index = self.list.GetFirstSelected()
+        if index is None:
+            return
+        entry2 = self.list.displayed_entries[index]
+        entry = duplicate_record(entry2)
+
+        with RecordFrame(self) as recordframe:
+            recordframe.vault_record = entry
+            if recordframe.ShowModal() == wx.ID_OK:
+                self.vault.records.append(entry)
+                self.mark_modified()
 
     def _on_delete(self, dummy):
         """

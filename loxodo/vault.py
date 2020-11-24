@@ -246,6 +246,15 @@ class Record:
         return self._group + self._title
 
 
+def duplicate_record(record2: Record) -> Record:
+    record = Record()
+    record.merge(record2)
+    record.uuid = uuid.uuid4()
+    record.last_mod = int(time.time())
+    record.title = record2.title + ' (copy)'
+    return record
+
+
 def _urandom(count):
     return secrets.token_bytes(count)
 
