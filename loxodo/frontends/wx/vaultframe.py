@@ -253,8 +253,9 @@ class VaultFrame(wx.Frame):
         self.Bind(wx.EVT_TEXT, self._on_search_do, self._searchbox)
         self._searchbox.Bind(wx.EVT_CHAR, self._on_searchbox_char)
 
-        _rowsizer.Add(self._searchbox, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT, 5)
-        sizer.Add(_rowsizer, 0, wx.ALIGN_RIGHT | wx.ALL, 5)
+        _rowsizer.Add(self._searchbox, proportion=0,
+                      flag=wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT, border=5)
+        sizer.Add(_rowsizer, proportion=0, flag=wx.ALIGN_LEFT | wx.ALL, border=5)
         sizer.Add(self.list, 1, wx.EXPAND, 0)
         self.panel.SetSizer(sizer)
         _sz_frame = wx.BoxSizer()
