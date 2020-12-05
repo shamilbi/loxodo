@@ -579,11 +579,10 @@ if not, write to the Free Software Foundation, Inc.,
             return
         entry = self.list.displayed_entries[index]
 
-        recordframe = RecordFrame(self)
-        recordframe.vault_record = entry
-        if recordframe.ShowModal() != wx.ID_CANCEL:
-            self.mark_modified()
-        recordframe.Destroy()
+        with RecordFrame(self) as recordframe:
+            recordframe.vault_record = entry
+            if recordframe.ShowModal() == wx.ID_OK:
+                self.mark_modified()
 
     def _on_add(self, dummy):
         """
