@@ -10,11 +10,23 @@ Usage (Windows):
 """
 
 import sys
+import re
 from setuptools import setup
+
+version_regex = r'__version__ = ["\']([^"\']*)["\']'
+with open('loxodo/__init__.py', 'r') as f:
+    text = f.read()
+    match = re.search(version_regex, text)
+
+    if match:
+        VERSION = match.group(1)
+    else:
+        raise RuntimeError("No version number found!")
 
 if sys.platform == 'darwin':
     extra_options = dict(
         name="Loxodo",
+        version=VERSION,
         setup_requires = ['py2app'],
         app = ['loxodo.py'],
         options = dict(
@@ -27,7 +39,6 @@ if sys.platform == 'darwin':
             )
         )
     )
-    setup(**extra_options)
 elif sys.platform == 'win32':
     import py2exe
     import os
@@ -46,6 +57,7 @@ elif sys.platform == 'win32':
             dataFiles.append((root, files))
 
     extra_options = dict(
+        version=VERSION,
         setup_requires = ['py2exe'],
         windows = ['loxodo.py'],
         data_files = dataFiles,
@@ -55,10 +67,10 @@ elif sys.platform == 'win32':
             )
         )
     )
-    setup(**extra_options)
 else:
     extra_options = dict(
         name = 'loxodo',
+        version=VERSION,
         author = 'Christoph Sommer',
         author_email = 'mail@christoph-sommer.de',
         url = 'http://www.christoph-sommer.de/loxodo/',
@@ -79,4 +91,5 @@ else:
             ],
         },
     )
-    setup(**extra_options)
+
+setup(**extra_options)

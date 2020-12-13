@@ -30,6 +30,8 @@ from datetime import datetime
 import wx
 import wx.adv
 
+from loxodo import __version__
+
 from loxodo.vault import (
     Vault, BadPasswordError, VaultFormatError, VaultVersionError, Record, duplicate_record)
 from loxodo.config import config
@@ -413,7 +415,7 @@ if not, write to the Free Software Foundation, Inc.,
         about = wx.adv.AboutDialogInfo()
         about.SetIcon(get_icon("loxodo-icon.png", 128, 128))
         about.SetName("Loxodo")
-        about.SetVersion("0.0-git")
+        about.SetVersion(__version__)
         about.SetCopyright("Copyright (C) 2008 Christoph Sommer <mail@christoph-sommer.de>")
         about.SetWebSite("http://www.christoph-sommer.de/loxodo")
         about.SetLicense(gpl_v2)
