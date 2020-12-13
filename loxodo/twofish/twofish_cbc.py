@@ -17,8 +17,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
 
-from . import twofish, PY3
 import operator
+from . import twofish
 
 
 class TwofishCBC:
@@ -66,22 +66,13 @@ class TwofishCBC:
         """
         Return the bitwise xor of two arbitrary-length blocks of data
         """
-        if PY3:
-            return b"".join(
-                       map(
-                           lambda c1, c2: bytes([operator.xor(c1, c2)]),
-                           text1,
-                           text2
-                           )
+        return b"".join(
+                   map(
+                       lambda c1, c2: bytes([operator.xor(c1, c2)]),
+                       text1,
+                       text2
                        )
-        else:
-            return "".join(
-                       map(
-                           lambda c1, c2: chr(operator.xor(ord(c1), ord(c2))),
-                           text1,
-                           text2
-                           )
-                       )
+                   )
 
 
 def test_twofish_cbc():

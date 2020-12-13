@@ -42,22 +42,15 @@ from loxodo.vault import (
     Record,
 )
 from loxodo.config import config
-from loxodo import PY3
 
 
 def print_arr(*args):
-    if PY3:
-        print(''.join(args))
-    else:
-        print(''.join([i.encode('utf-8', 'replace') for i in args]))
+    print(''.join(args))
 
 
 def print_s(s, *args):
     if args:
-        if PY3:
-            print(s % args)
-        else:
-            print(s % [i.encode('utf-8', 'replace') for i in args])
+        print(s % args)
     else:
         print(s)
 

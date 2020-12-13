@@ -36,9 +36,7 @@
 
 # pylint: disable-all
 
-from . import PY3
-if PY3:
-    xrange = range
+xrange = range
 
 block_size = 16
 key_size = 32
