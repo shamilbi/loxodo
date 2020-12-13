@@ -8,7 +8,7 @@ Loxodo lives at http://www.christoph-sommer.de/loxodo
 Setup:
 ------
 
-Loxodo requires Python 2 or 3 and two add-on python modules: Six and wxPython 4.0.
+Loxodo requires Python 3 and wxPython 4.0.
 
 The simplest way to set things up is to use your distribution's package management to install Python and these two modules.
 
@@ -16,7 +16,6 @@ Alternatively, you can install the Python module `pip` and use it to install the
 Note that, at the time of this writing, wxPython 4 ("Phoenix") availability for Linux distributions is rather limited; if you want to avoid building wxPython from source, you can follow the instructins from its download page and use a command like the following (substituting "debian-9" for you distribution's code name):
 
     python -m pip install --user pip
-    python -m pip install --user six
     python -m pip install --user -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/debian-9 wxPython
 
 Alternatively, you can install the Python module `pipenv` and use it to set up a virtual environment for you.
